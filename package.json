@@ -1,0 +1,16 @@
+{
+  "name": "movete",
+  "version": "0.0.1",
+  "private": true,
+  "description": "",
+  "workspaces": ["server", "ui"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ElPerenza/Movete.git"
+  },
+  "license": "GPL-3.0-only",
+  "bugs": {
+    "url": "https://github.com/ElPerenza/Movete/issues"
+  },
+  "homepage": "https://github.com/ElPerenza/Movete#readme"
+}
