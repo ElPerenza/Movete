@@ -23,6 +23,13 @@ export class Map implements AfterViewInit{
         this.initMap();
     }
 
+    /**
+     * init the map, centered in Trento, then from the backend it retrive the
+     * stops that are in the initial bounding box, add an event listener on map
+     * movment and zoom, this event listener ask for the data in the current bounding box
+     * each time the user move the map or zoom in and out.
+     * TODO: add the filter on the movment of the map. 
+     */
     private initMap(): void {
         //Centered in Trento
         this.map = L.map('map').setView([46.0667, 11.1333], 15);
@@ -38,14 +45,17 @@ export class Map implements AfterViewInit{
             console.log("Map moved or zoomed")
             this.fetchStopsInBound();
         })
-        
-        
-        
     }
 
+    /**
+     * Retrive the stops that are in the current bounding box from the database
+     */
     private fetchStopsInBound(): void {
+        //Get the bounding box of the current map
         var bottomRight = this.map.getBounds().getSouthEast();
         var topLeft = this.map.getBounds().getNorthWest();
+
+        //Actual request
         this.http.post<Stop[]>(this.baseUrl+'search', JSON.stringify({
                 "bbox": { 
                     "topLeft":  {
@@ -63,11 +73,18 @@ export class Map implements AfterViewInit{
                     console.log(data);
                     this.addStopsToMap(data);
                 }
+                //TODO add on error
             });
     }
 
+    /**
+     * Add all the stops to the markerLayer, and displays it on the map
+     * @param stops, the list of stop that need to be displayed
+     */
     private addStopsToMap(stops: Stop[]): void {
+        //Clear the previews markers
         this.markerLayer.clearLayers();
+
         stops.forEach(stop => {
             const lat = stop.location.coordinates[1];
             const lon = stop.location.coordinates[0];
