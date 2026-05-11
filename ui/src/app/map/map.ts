@@ -1,6 +1,7 @@
 import { AfterViewInit, Component } from "@angular/core";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import * as L from 'leaflet';
+import { Stop } from "../class/stop";
 
 @Component({
     selector: "app-map",
@@ -10,6 +11,7 @@ import * as L from 'leaflet';
 })
 export class Map implements AfterViewInit{
     private map! : L.Map;
+    private markerLayer: L.LayerGroup = L.layerGroup();
     private baseUrl: String = 'http://localhost:3000/pois/stop/'
     private header: HttpHeaders = new HttpHeaders({ 'Content-Type' : 'application/json' });
 
@@ -27,10 +29,24 @@ export class Map implements AfterViewInit{
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(this.map);
+
+        this.markerLayer.addTo(this.map);
+
+        this.fetchStopsInBound();
         
+        this.map.on('moveend', () => {
+            console.log("Map moved or zoomed")
+            this.fetchStopsInBound();
+        })
+        
+        
+        
+    }
+
+    private fetchStopsInBound(): void {
         var bottomRight = this.map.getBounds().getSouthEast();
         var topLeft = this.map.getBounds().getNorthWest();
-        this.http.post<any>(this.baseUrl+'search', JSON.stringify({
+        this.http.post<Stop[]>(this.baseUrl+'search', JSON.stringify({
                 "bbox": { 
                     "topLeft":  {
                         "type":  "Point",
@@ -48,15 +64,15 @@ export class Map implements AfterViewInit{
                     this.addStopsToMap(data);
                 }
             });
-        
     }
 
-    private addStopsToMap(stops: any[]): void {
+    private addStopsToMap(stops: Stop[]): void {
+        this.markerLayer.clearLayers();
         stops.forEach(stop => {
             const lat = stop.location.coordinates[1];
             const lon = stop.location.coordinates[0];
 
-            L.marker([lat, lon]).addTo(this.map)
+            L.marker([lat, lon]).addTo(this.markerLayer)
         })
     }
 }
