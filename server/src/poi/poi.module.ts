@@ -1,9 +1,8 @@
 import { Module } from "@nestjs/common";
 import { StopController } from "./controllers/stop.controller";
 import { StopService } from "./services/stop.service";
-import { MongooseModule } from "@nestjs/mongoose"
-import { Parking, ParkingSchema } from "./models/parking.schema"
-import { Stop, StopSchema } from "./models/stop.schema"
+import { MongooseModule } from "@nestjs/mongoose";
+import { Stop, StopSchema } from "./models/stop.schema";
 
 @Module({
     imports: [
