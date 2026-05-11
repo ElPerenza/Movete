@@ -85,7 +85,7 @@ export class StopService {
             
         }
 
-        if(transportTypes != null) {
+        if(transportTypes != null && transportTypes.length > 0) {
             query.where('transportModes').in(transportTypes);
         }
 
