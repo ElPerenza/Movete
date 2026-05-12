@@ -1,11 +1,12 @@
 import { AfterViewInit, Component, ChangeDetectorRef} from "@angular/core";
+import { FormsModule } from "@angular/forms";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import * as L from 'leaflet';
 import { Stop } from "../class/stop";
 
 @Component({
     selector: "app-map",
-    imports: [],
+    imports: [FormsModule],
     templateUrl: "./map.html",
     styleUrl: "./map.css"
 })
@@ -19,6 +20,17 @@ export class Map implements AfterViewInit{
     public currentStops: Stop[] = [];
     public showSidebar: boolean = false;
     public selectedStopId: string | null = null;
+
+    /**
+     * Filter for the transport type, it is an array of object with the label, the value and if it is checked or not
+     * TODO here we will add poi types like stops, park and park with sensor.
+     */
+    public transportFilters = [
+        { label: 'Bus', value: 'BUS', checked: false },
+        { label: 'Train', value: 'TRAIN', checked: false },
+        { label: 'Cable Car', value: 'CABLE_CAR', checked: false }
+    ];
+    public useBbox: boolean = true;
 
 
     //TODO verify if cdr have some impact on performance but is the only thing that make the navbar working dynamically
@@ -47,7 +59,7 @@ export class Map implements AfterViewInit{
         this.fetchStopsInBound();
         
         this.map.on('moveend', () => {
-            //Check if this a panning move and if it is, it dose not ask for new data
+            //Check if this a panning move, if it is it dose not ask for new data
             if(!this.panning) {
                 console.log("not panning");
                 this.fetchStopsInBound();
@@ -64,21 +76,16 @@ export class Map implements AfterViewInit{
         //Get the bounding box of the current map
         var bottomRight = this.map.getBounds().getSouthEast();
         var topLeft = this.map.getBounds().getNorthWest();
-
+        const payload = {
+        // If useBbox is false, we could send null or a huge range (depending on your backend)
+        "bbox": this.useBbox ? { 
+            "topLeft": { "type": "Point", "coordinates": [topLeft.lng, topLeft.lat] },
+            "bottomRight": { "type": "Point", "coordinates": [bottomRight.lng, bottomRight.lat] }
+        } : null,
+        "transportTypes": this.selectedTransportTypes
+    };
         //Actual request
-        this.http.post<Stop[]>(this.baseUrl+'search', JSON.stringify({
-                "bbox": { 
-                    "topLeft":  {
-                        "type":  "Point",
-                        "coordinates":  [topLeft.lng, topLeft.lat]
-                    },
-                    "bottomRight": {
-                        "type":  "Point",
-                        "coordinates":  [bottomRight.lng, bottomRight.lat]
-                    }
-                },
-                "transportTypes" : []
-            }), {headers: this.header}).subscribe({
+        this.http.post<Stop[]>(this.baseUrl+'search', JSON.stringify(payload), {headers: this.header}).subscribe({
                 next: (data) => {
                      this.addStopsToMap(data);
                 }
@@ -117,5 +124,23 @@ export class Map implements AfterViewInit{
 
         this.panning = true;
         this.map.panTo([stop.location.coordinates[1], stop.location.coordinates[0]]);
+    }
+
+    /**
+     * Get the transport types that are selected in the filter, 
+     * this is used to send the request to the backend with the correct filter
+     */
+    get selectedTransportTypes(): string[] {
+        return this.transportFilters
+            .filter(f => f.checked)
+            .map(f => f.value);
+    }
+
+    /**
+     * This function is called each time the user change the filter, 
+     * it ask for new data to the backend with the new filter
+     */
+    public onFilterChange(): void {
+        this.fetchStopsInBound();
     }
 }
