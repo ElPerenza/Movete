@@ -76,14 +76,15 @@ export class Map implements AfterViewInit{
         //Get the bounding box of the current map
         var bottomRight = this.map.getBounds().getSouthEast();
         var topLeft = this.map.getBounds().getNorthWest();
-        const payload = {
-        // If useBbox is false, we could send null or a huge range (depending on your backend)
-        "bbox": this.useBbox ? { 
-            "topLeft": { "type": "Point", "coordinates": [topLeft.lng, topLeft.lat] },
-            "bottomRight": { "type": "Point", "coordinates": [bottomRight.lng, bottomRight.lat] }
-        } : null,
-        "transportTypes": this.selectedTransportTypes
-    };
+        const payload: {transportTypes: string[], bbox? : any} = {
+            "transportTypes": this.selectedTransportTypes
+        };
+        if (this.useBbox) {
+            payload.bbox = { 
+                "topLeft": { "type": "Point", "coordinates": [topLeft.lng, topLeft.lat] },
+                "bottomRight": { "type": "Point", "coordinates": [bottomRight.lng, bottomRight.lat] }
+            }
+        }
         //Actual request
         this.http.post<Stop[]>(this.baseUrl+'search', JSON.stringify(payload), {headers: this.header}).subscribe({
                 next: (data) => {
