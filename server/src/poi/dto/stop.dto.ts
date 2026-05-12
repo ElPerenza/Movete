@@ -3,9 +3,8 @@ import { Point } from "../../common/point";
 import { IsGtfsId } from "../is-gtfs-id";
 import { OmitType, PartialType } from "@nestjs/mapped-types";
 import { Expose, Type } from "class-transformer";
+import { stopTypes, StopType } from "../poi.types.ts/stopType";
 
-const stopTypes = ["TRAIN", "BUS", "CABLE_CAR"] as const;
-export type StopType = (typeof stopTypes)[number];
 
 export class StopDto {
 

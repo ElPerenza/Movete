@@ -1,9 +1,8 @@
 import { Prop, raw, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument } from "mongoose";
 import { Point } from "../../common/point";
+import { StopType } from "../poi.types.ts/stopType";
 
-const stopTypes = ["TRAIN", "BUS", "CABLE_CAR"] as const;
-export type StopType = (typeof stopTypes)[number];
 
 @Schema()
 export class Stop {
