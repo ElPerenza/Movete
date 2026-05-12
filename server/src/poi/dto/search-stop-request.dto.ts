@@ -1,4 +1,4 @@
-import { ValidateNested, IsIn } from "class-validator";
+import { IsIn } from "class-validator";
 import { BoundingBox } from "../../common/bounding-box";
 import { Type } from "class-transformer";
 
@@ -13,7 +13,6 @@ export type ParkingType = (typeof parkingTypes)[number];
 
 export class SearchStopRequestDto {
 
-    @ValidateNested()
     @Type(() => BoundingBox)
     bbox: BoundingBox;
 
