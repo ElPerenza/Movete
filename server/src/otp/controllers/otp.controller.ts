@@ -2,7 +2,7 @@ import { Controller, Get, Param } from '@nestjs/common';
 import { OtpService } from '../services/otp.service';
 import { StopTime } from '../models/stop-time.model';
 
-// path palesemente di test ;)
+// testing path ;)
 @Controller('api/v1/test-otp')
 export class OtpController {
 

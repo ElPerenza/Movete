@@ -1,15 +1,27 @@
 export class StopTime {
-  headsign: string;
 
-  tripId: string;
+    //Direction or final destination of the trip, 
+    //null if the transit agency does not provide this information
+    headsign: string | null;
 
-  scheduledArrival: Date;
+    //Unique GTFS identifier for the specific trip
+    tripId: string;
 
-  scheduledDeparture: Date;
+    //Scheduled arrival time fo the vehicle at the stop
+    scheduledArrival: Date;
 
-  arrivalDelay: number;
+    //Scheduled departure time of the vehicle at the Stop
+    scheduledDeparture: Date;
 
-  departureDelay: number;
+    //Arrival delay in seconds. 
+    //Defaults to 0 if no real-time tracking is available
+    arrivalDelay: number;
 
-  realtime: boolean = false;
+    //Departure delay in seconds. 
+    //Defaults to 0 if no real-time tracking is available
+    departureDelay: number;
+
+    //Indicates whether the timing data includes live real-time updates
+    //Hardcoded to false 
+    realtime: boolean = false;
 }

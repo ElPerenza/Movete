@@ -4,11 +4,11 @@ import { StopTime } from '../models/stop-time.model';
 @Injectable()
 export class OtpService {
 
-    // endpoint ufficiale GTFS per OTP2
+    // Official GTFS endpoint for OTP2
     private readonly otpGraphqlUrl = 'http://localhost:8080/otp/gtfs/v1';
 
     async getStopTimes(gtfsId: string): Promise<StopTime[]> {
-        // query ottimizzata per GTFS di OTP2
+        //GraphQL query to fetch stop times without grouping them by route patterns.
         const query = `
             query GetStopTimes($stopId: String!) {
                 stop(id: $stopId) {
@@ -27,6 +27,7 @@ export class OtpService {
         `;
 
         try {
+            // Execute the POST request to the local OTP GraphQL API
             const response = await fetch(this.otpGraphqlUrl, {
                 method: 'POST',
                 headers: {
@@ -40,30 +41,39 @@ export class OtpService {
             });
 
             if (!response.ok) {
-                throw new Error(`Errore HTTP da OTP: ${response.status}`);
+                throw new Error(`OTP HTTP Error: ${response.status}`);
             }
 
             const { data, errors } = await response.json();
 
+            // Handle specific GraphQL syntax or execution errors returned by the server
             if (errors) {
-                console.error("Errori GraphQL da OTP:", errors);
-                throw new Error("Errore nella query GraphQL verso OTP2");
+                console.error("GraphQL errors from OTP:", errors);
+                throw new Error("Error executing the GraphQL query against OTP2");
             }
 
+            // Handle the case where the stop ID is valid in syntax but missing from the OTP graph
             if (!data.stop) {
-                throw new HttpException('Fermata non trovata in OTP2', HttpStatus.NOT_FOUND);
+                throw new HttpException('Stop not found in OTP2', HttpStatus.NOT_FOUND);
             }
 
+            // Map the raw GraphQL response to StopTime DTO model
             const stopTimes: StopTime[] = data.stop.stoptimesWithoutPatterns.map((st: any) => {
                 const stopTime = new StopTime();
 
-                stopTime.headsign = st.headsign || 'Sconosciuta';
+                //Assign the destination name
+                //If headsign is empty/unknown --> null
+                stopTime.headsign = st.headsign || null;
+
+                //Extract the parent trip's GTFS ID
                 stopTime.tripId = st.trip?.gtfsId;
 
-                // le date in OTP GTFS si calcolano sommando la mezzanotte (serviceDay) ai secondi
+
+                // Time calculation (serviceDay + seconds) * 100
                 stopTime.scheduledArrival = new Date((st.serviceDay + st.scheduledArrival) * 1000);
                 stopTime.scheduledDeparture = new Date((st.serviceDay + st.scheduledDeparture) * 1000);
 
+                //Map potential delays, defaulting to 0 seconds
                 stopTime.arrivalDelay = st.arrivalDelay || 0;
                 stopTime.departureDelay = st.departureDelay || 0;
                 stopTime.realtime = false;
@@ -74,9 +84,9 @@ export class OtpService {
             return stopTimes;
 
         } catch (error) {
-            console.error("Errore nel recupero degli stop times:", error);
+            console.error("Failed to retrieve stop times:", error);
             throw new HttpException(
-                'Errore interno durante il recupero dei dati di trasporto',
+                'Internal error while retrieving transit data',
                 HttpStatus.INTERNAL_SERVER_ERROR
             );
         }

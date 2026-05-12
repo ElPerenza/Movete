@@ -4,7 +4,7 @@ import { OtpController } from './controllers/otp.controller';
 
 @Module({
     imports: [],
-    controllers: [OtpController], //<-- per testare (poi rimuovere)
+    controllers: [OtpController], //<-- for testing (must remove and implement in poi controller)
     providers: [OtpService],
     exports: [OtpService],
 })
