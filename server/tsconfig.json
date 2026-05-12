@@ -18,6 +18,7 @@
     "strict": true,
     "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true,
+    "strictPropertyInitialization": false,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
