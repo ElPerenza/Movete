@@ -21,7 +21,12 @@ export class OtpService {
                         departureDelay
                         serviceDay
                         realtime
-                        trip { gtfsId }
+                        trip { 
+                            gtfsId
+                            route{
+                                shortName
+                            }
+                        }
                     }
                 }
             }
@@ -66,6 +71,8 @@ export class OtpService {
                     // Assign the destination name
                     // If headsign is empty/unknown --> null
                     stopTime.headsign = st.headsign || null;
+
+                    stopTime.tripId = st.trip?.route?.shortName || null;
 
                     // Extract the parent trip's GTFS ID
                     stopTime.tripId = st.trip?.gtfsId;
