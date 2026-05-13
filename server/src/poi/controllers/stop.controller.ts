@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Delete, Put, Body, Param, NotFoundException, HttpException, HttpStatus } from "@nestjs/common";
 import { StopService } from "../services/stop.service";
 import { OtpService } from "../../otp/services/otp.service";
+import { StopTime } from "../../otp/models/stop-time.model"
 import { StopDto, CreateStopDto, UpdateStopDto } from "../dto/stop.dto";
 import { SearchStopRequestDto } from "../dto/search-stop-request.dto";
 import { plainToInstance } from "class-transformer";
@@ -58,27 +59,22 @@ export class StopController {
     }
 
     @Get("/:id/stop-times")
-    async getStopTimes(@Param("id") id: string) {
+    async getStopTimes(@Param("id") id: string): Promise<StopTime[]> {
+        // Search for stop in DB
         const requestedStop = await this.stopService.findStopById(id);
-        if (requestedStop === null) {
-            throw new NotFoundException('Stop not found in database');
+        if (!requestedStop) {
+            throw new NotFoundException('Fermata non trovata');
         }
 
-        const gtfsId = requestedStop.otpStops && requestedStop.otpStops[0];
-        if (!gtfsId) {
-            throw new HttpException(
-                'No OTP ID associated for this stop',
-                HttpStatus.BAD_REQUEST
-            );
+        // Pass all GTFS IDs to the service
+        const gtfsIds = requestedStop.otpStops;
+        if (!gtfsIds || gtfsIds.length === 0) {
+            throw new HttpException('Nessun ID GTFS associato', HttpStatus.BAD_REQUEST);
         }
 
-        try {
-            return await this.otpService.getStopTimes(gtfsId);
-        } catch (error) {
-            throw new HttpException(
-                'Internal error during transport data request',
-                HttpStatus.INTERNAL_SERVER_ERROR
-            );
-        }
+        const times = await this.otpService.getStopTimes(gtfsIds);
+
+        // Se usi ClassSerializerInterceptor o vuoi filtrare i valori, usa plainToInstance
+        return plainToInstance(StopTime, times);
     }
 }

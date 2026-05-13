@@ -10,6 +10,6 @@ export class OtpController {
     @Get(':id/stop-times')
     async testGetStopTimes(@Param('id') gtfsId: string): Promise<StopTime[]> {
         console.log(`[TEST OTP] Richiesti orari per la fermata: ${gtfsId}`);
-        return this.otpService.getStopTimes(gtfsId);
+        return this.otpService.getStopTimes([gtfsId]);
     }
 }
