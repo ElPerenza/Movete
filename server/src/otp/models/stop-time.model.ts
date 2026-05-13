@@ -7,6 +7,9 @@ export class StopTime {
     @Expose()
     headsign: string | null;
 
+    @Expose()
+    routeShortName: string | null;
+
     //Unique GTFS identifier for the specific trip
     @Expose()
     tripId: string;
