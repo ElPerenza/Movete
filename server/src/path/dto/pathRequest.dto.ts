@@ -1,8 +1,10 @@
+import { IsIn, ValidateNested } from "class-validator";
 
 export class PathRequestDto {
     from: Coordinates;
     to: Coordinates;
     dateTime: Date;
+    @ValidateNested()
     modes: Modes;
     //this is false by default, if true use the dateTime as arriveTime and not departure time.
     arriveBy: boolean;
@@ -22,9 +24,16 @@ const directMode = ["car", "bicycle"]
 type DirectMode = (typeof directMode)[number];
 
 class Modes {
+    @IsIn(accessMode, { each: true })
     accessMode: AccessMode;
+
+    @IsIn(transportModes, { each: true })
     transportModes: TransportModes;
+
+    @IsIn(egressMode, { each: true })
     egressMode: EgressMode;
+
+    @IsIn(directMode, { each: true })
     directMode: DirectMode;
 }
 
