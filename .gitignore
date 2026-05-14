@@ -1,3 +1,6 @@
 /node_modules
 otp-server/
 .env
+/mongo-data/
+/scripts/
+.env
