@@ -1,5 +1,5 @@
-import { IsIn, ValidateNested } from "class-validator";
-
+import { IsIn, IsOptional, ValidateNested } from "class-validator";
+import { Type } from "class-transformer";
 
 const transportModes = ["air", "bus", "cableway", "coach", "funicolar", "lift", "metro", "monorail", "rail", "taxi", "tram", "trolleybus", "unknown", "water"] as const;
 type TransportModes = (typeof transportModes)[number];
@@ -15,28 +15,37 @@ const directMode = ["car", "bicycle"] as const;
 type DirectMode = (typeof directMode)[number];
 
 class Modes {
+    @IsOptional()
     @IsIn(accessMode, { each: true })
     accessMode: AccessMode;
 
+    @IsOptional()
     @IsIn(transportModes, { each: true })
     transportModes: TransportModes[];
 
+    @IsOptional()
     @IsIn(egressMode, { each: true })
     egressMode: EgressMode;
 
+    @IsOptional()
     @IsIn(directMode, { each: true })
     directMode: DirectMode;
 }
 
 class Coordinates {
-    //this must be lat lon
-    coordinates: [number, number];
+    latitude: number;
+    longitude: number;
 }
 
 export class PathRequestDto {
+    @Type(() => Coordinates)
     from: Coordinates;
+
+    @Type(() => Coordinates)
     to: Coordinates;
     dateTime: Date;
+
+    @Type(() => Modes)
     @ValidateNested()
     modes: Modes;
     //this is false by default, if true use the dateTime as arriveTime and not departure time.
