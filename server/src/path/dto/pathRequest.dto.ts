@@ -1,14 +1,5 @@
 import { IsIn, ValidateNested } from "class-validator";
 
-export class PathRequestDto {
-    from: Coordinates;
-    to: Coordinates;
-    dateTime: Date;
-    @ValidateNested()
-    modes: Modes;
-    //this is false by default, if true use the dateTime as arriveTime and not departure time.
-    arriveBy: boolean;
-}
 
 const transportModes = ["air", "bus", "cableway", "coach", "funicolar", "lift", "metro", "monorail", "rail", "taxi", "tram", "trolleybus", "unknown", "water"] as const;
 type TransportModes = (typeof transportModes)[number];
@@ -40,4 +31,14 @@ class Modes {
 class Coordinates {
     //this must be lat lon
     coordinates: [number, number];
+}
+
+export class PathRequestDto {
+    from: Coordinates;
+    to: Coordinates;
+    dateTime: Date;
+    @ValidateNested()
+    modes: Modes;
+    //this is false by default, if true use the dateTime as arriveTime and not departure time.
+    arriveBy: boolean;
 }
