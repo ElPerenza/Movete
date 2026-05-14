@@ -3,10 +3,11 @@ import { FormsModule } from "@angular/forms";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import * as L from 'leaflet';
 import { Stop } from "../class/stop";
+import { Path } from "../path/path";
 
 @Component({
     selector: "app-map",
-    imports: [FormsModule],
+    imports: [FormsModule, Path],
     templateUrl: "./map.html",
     styleUrl: "./map.css"
 })
