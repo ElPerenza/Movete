@@ -111,4 +111,59 @@ export class OtpService {
             );
         }
     }
+
+    async getTripDetails(tripId: string): Promise<any[]> {
+        const query = `
+            query GetTripDetails($tripId: String!) {
+                trip(id: $tripId) {
+                    stoptimes {
+                        stop {
+                            name
+                        }
+                        scheduledArrival
+                        arrivalDelay
+                        realtime
+                    }
+                }
+            }
+        `;
+
+        try {
+            const response = await fetch(this.otpGraphqlUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    query,
+                    variables: { tripId },
+                }),
+            });
+
+            const { data, errors } = await response.json();
+
+            if (errors || !data?.trip) {
+                return [];
+            }
+
+            // OTP restituisce gli orari del trip come secondi dalla mezzanotte.
+            // Calcoliamo la mezzanotte di oggi per trasformarli in oggetti Date validi.
+            const midnight = new Date();
+            midnight.setHours(0, 0, 0, 0);
+            const midnightSeconds = Math.floor(midnight.getTime() / 1000);
+
+            return data.trip.stoptimes.map((st: any) => {
+                const arrivalDate = new Date((midnightSeconds + st.scheduledArrival) * 1000);
+
+                return {
+                    stopName: st.stop.name,
+                    scheduledArrival: arrivalDate,
+                    delay: st.arrivalDelay || 0,
+                    realtime: st.realtime || false
+                };
+            });
+
+        } catch (error) {
+            console.error("Failed to retrieve trip details:", error);
+            throw new HttpException('Internal error while retrieving trip data', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

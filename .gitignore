@@ -4,3 +4,4 @@ otp-server/
 /mongo-data/
 /scripts/
 .env
+docker-compose.yml

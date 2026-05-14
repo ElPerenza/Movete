@@ -1,8 +1,15 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Stop } from '../class/stop';
 import { StopTime } from '../class/stop-time';
+
+export interface TripDetail {
+    stopName: string;
+    scheduledArrival: string;
+    delay: number;
+    realtime: boolean;
+}
 
 @Component({
     selector: 'app-timetable',
@@ -16,9 +23,13 @@ export class Timetable implements OnChanges {
     public isLoadingTimes: boolean = false;
     public timesError: string | null = null;
 
+    public expandedTripId: string | null = null;
+    public tripDetails: TripDetail[] = [];
+    public isLoadingTrip: boolean = false;
+
     private baseUrl: string = 'http://localhost:3000/pois/stop/';
 
-    constructor(private http: HttpClient) { }
+    constructor(private http: HttpClient, private cdr: ChangeDetectorRef) { }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes['stop'] && this.stop) {
@@ -35,11 +46,39 @@ export class Timetable implements OnChanges {
             next: (data) => {
                 this.currentStopTimes = data;
                 this.isLoadingTimes = false;
+                this.cdr.detectChanges();
             },
             error: (err) => {
                 console.error('Error fetching stop times', err);
                 this.timesError = 'Impossibile caricare gli orari in tempo reale.';
                 this.isLoadingTimes = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    public toggleTrip(tripId: string): void {
+
+        if (this.expandedTripId === tripId) {
+            this.expandedTripId = null;
+            return;
+        }
+
+        this.expandedTripId = tripId;
+        this.isLoadingTrip = true;
+        this.tripDetails = [];
+        this.cdr.detectChanges();
+
+        this.http.get<TripDetail[]>(`${this.baseUrl}trip/${tripId}/details`).subscribe({
+            next: (data) => {
+                this.tripDetails = data;
+                this.isLoadingTrip = false;
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error(err);
+                this.isLoadingTrip = false;
+                this.cdr.detectChanges();
             }
         });
     }

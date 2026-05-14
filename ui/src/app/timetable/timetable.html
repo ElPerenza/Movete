@@ -19,37 +19,57 @@
         } @else if (!isLoadingTimes && currentStopTimes.length === 0) {
             <p class="text-gray-500 text-xs italic">Nessuna corsa prevista a breve.</p>
         } @else {
-            <div class="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+            <div class="space-y-2 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
                 @for (time of currentStopTimes; track time.tripId) {
-                    <div class="flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-2 rounded border border-gray-100 transition-colors">
-                        
-                        <div class="flex items-center gap-2 overflow-hidden">
-                            <span class="bg-blue-600 text-white text-xs font-bold w-7 h-7 flex items-center justify-center rounded-md shrink-0 shadow-sm">
-                                {{ time.routeShortName || '-' }}
-                            </span>
-                            <span class="font-medium text-gray-800 truncate text-xs" title="{{ time.headsign }}">
-                                {{ time.headsign || 'Sconosciuta' }}
-                            </span>
-                        </div>
+        
+                    <div class="bg-gray-50 hover:bg-gray-100 rounded border border-gray-100 transition-colors overflow-hidden">
+            
+                        <div class="flex items-center justify-between p-2 cursor-pointer" (click)="toggleTrip(time.tripId)">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <span class="bg-blue-600 text-white text-xs font-bold w-7 h-7 flex items-center justify-center rounded-md shrink-0 shadow-sm">
+                                    {{ time.routeShortName || '-' }}
+                                </span>
+                                <span class="font-medium text-gray-800 truncate text-xs">
+                                    Verso: {{ time.headsign || 'Sconosciuta' }}
+                                </span>
+                            </div>
 
-                        <div class="text-right flex flex-col shrink-0 ml-2">
-                            <span class="font-bold text-gray-900 text-sm">
-                                {{ time.scheduledDeparture | date:'HH:mm' }}
-                            </span>
-                            
-                            @if (time.realtime) {
-                                @if (time.departureDelay <= 0) {
-                                    <span class="text-[10px] text-green-600 font-semibold tracking-wide">In Orario</span>
-                                } @else {
-                                    <span class="text-[10px] text-red-600 font-semibold tracking-wide">
-                                        +{{ time.departureDelay / 60 | number:'1.0-0' }} min
-                                    </span>
+                            <div class="text-right flex flex-col shrink-0 ml-2">
+                                <span class="font-bold text-gray-900 text-sm">
+                                    {{ time.scheduledDeparture | date:'HH:mm' }}
+                                </span>
+                                @if (time.realtime) {
+                                    @if (time.departureDelay <= 0) {
+                                        <span class="text-[10px] text-green-600 font-semibold tracking-wide">In Orario</span>
+                                    } @else {
+                                        <span class="text-[10px] text-red-600 font-semibold tracking-wide">
+                                            +{{ time.departureDelay / 60 | number:'1.0-0' }} min
+                                        </span>
+                                    }
                                 }
-                            } @else {
-                                <span class="text-[10px] text-gray-400">Programmato</span>
-                            }
+                            </div>
                         </div>
-
+    
+                        @if (expandedTripId === time.tripId) {
+                            <div class="bg-white border-t border-gray-100 p-3">
+                                @if (isLoadingTrip) {
+                                    <div class="text-xs text-blue-500 animate-pulse text-center my-2">Caricamento percorso...</div>
+                                } @else {
+                                    <div class="ml-2 border-l-2 border-blue-300 pl-4 space-y-3 py-1 relative">
+                                        @for (step of tripDetails; track step.stopName) {
+                                            <div class="relative group">
+                                                <div class="absolute -left-[21px] top-1 w-2.5 h-2.5 bg-blue-500 border-2 border-white rounded-full group-hover:bg-blue-700 transition-colors"></div>
+                                        
+                                                <div class="flex justify-between items-center text-xs">
+                                                    <span class="font-medium text-gray-700 truncate pr-2">{{ step.stopName }}</span>
+                                                    <span class="text-gray-500 shrink-0 font-mono">{{ step.scheduledArrival | date:'HH:mm' }}</span>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
                 }
             </div>

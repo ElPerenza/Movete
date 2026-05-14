@@ -28,7 +28,7 @@ export class StopController {
     @Get("/:id")
     async get(@Param("id") id: string): Promise<StopDto> {
         const requestedStop = await this.stopService.findStopById(id);
-        if (stop === null) {
+        if (requestedStop === null) {
             throw new NotFoundException();
         }
         return plainToInstance(StopDto, requestedStop, { excludeExtraneousValues: true });
@@ -74,7 +74,15 @@ export class StopController {
 
         const times = await this.otpService.getStopTimes(gtfsIds);
 
-        // Se usi ClassSerializerInterceptor o vuoi filtrare i valori, usa plainToInstance
+        // If using ClassSerializerInterceptor or want to filter values --> plainToInstance
         return plainToInstance(StopTime, times);
+    }
+
+    @Get("/trip/:tripId/details")
+    async getTripDetails(@Param("tripId") tripId: string) {
+        if (!tripId) {
+            throw new HttpException('Trip ID mancante', HttpStatus.BAD_REQUEST);
+        }
+        return this.otpService.getTripDetails(tripId);
     }
 }
