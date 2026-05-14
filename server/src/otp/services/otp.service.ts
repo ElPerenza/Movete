@@ -5,8 +5,8 @@ import { StopTime } from '../models/stop-time.model';
 export class OtpService {
 
     // Official GTFS endpoint for OTP2
-    private readonly otpGraphqlUrl = 'http://localhost:8080/otp/gtfs/v1';
-
+    //private readonly otpGraphqlUrl = 'http://localhost:8080/otp/gtfs/v1';
+    private readonly otpGraphqlUrl = 'http://localhost:8080/otp/routers/default/index/graphql';
     // Accepts an array of strings to handle multiple GTFS IDs for a single logical stop
     async getStopTimes(gtfsIds: string[]): Promise<StopTime[]> {
         const query = `
@@ -144,8 +144,7 @@ export class OtpService {
                 return [];
             }
 
-            // OTP restituisce gli orari del trip come secondi dalla mezzanotte.
-            // Calcoliamo la mezzanotte di oggi per trasformarli in oggetti Date validi.
+            // Proper Date calculation
             const midnight = new Date();
             midnight.setHours(0, 0, 0, 0);
             const midnightSeconds = Math.floor(midnight.getTime() / 1000);

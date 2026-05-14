@@ -46,7 +46,7 @@ export class StopController {
     @Delete("/:id")
     async delete(@Param("id") id: string): Promise<StopDto> {
         const deletedStop = await this.stopService.deleteStopById(id);
-        if (stop === null) {
+        if (deletedStop === null) {
             throw new NotFoundException();
         }
         return plainToInstance(StopDto, deletedStop, { excludeExtraneousValues: true })

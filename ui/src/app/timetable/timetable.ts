@@ -23,7 +23,8 @@ export class Timetable implements OnChanges {
     public isLoadingTimes: boolean = false;
     public timesError: string | null = null;
 
-    public expandedTripId: string | null = null;
+    public isModalOpen: boolean = false;
+    public selectedTripHeadsign: string = '';
     public tripDetails: TripDetail[] = [];
     public isLoadingTrip: boolean = false;
 
@@ -57,19 +58,16 @@ export class Timetable implements OnChanges {
         });
     }
 
-    public toggleTrip(tripId: string): void {
-
-        if (this.expandedTripId === tripId) {
-            this.expandedTripId = null;
-            return;
-        }
-
-        this.expandedTripId = tripId;
+    public openTripDetails(time: StopTime): void {
+        this.isModalOpen = true;
+        this.selectedTripHeadsign = time.headsign || 'Sconosciuta';
         this.isLoadingTrip = true;
         this.tripDetails = [];
         this.cdr.detectChanges();
 
-        this.http.get<TripDetail[]>(`${this.baseUrl}trip/${tripId}/details`).subscribe({
+        const encodedTripId = encodeURIComponent(time.tripId);
+
+        this.http.get<TripDetail[]>(`${this.baseUrl}trip/${encodedTripId}/details`).subscribe({
             next: (data) => {
                 this.tripDetails = data;
                 this.isLoadingTrip = false;
@@ -81,5 +79,10 @@ export class Timetable implements OnChanges {
                 this.cdr.detectChanges();
             }
         });
+    }
+
+    public closeModal(): void {
+        this.isModalOpen = false;
+        this.tripDetails = [];
     }
 }
