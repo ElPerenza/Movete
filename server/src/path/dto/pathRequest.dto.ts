@@ -14,13 +14,13 @@ const transportModes = ["air", "bus", "cableway", "coach", "funicolar", "lift", 
 type TransportModes = (typeof transportModes)[number];
 
 //TODO verify how to configure OTP to make it understaned that we can travel with bike on trains
-const accessMode = ["car_pickup", "foot"];
+const accessMode = ["car_pickup", "foot"] as const;
 type AccessMode = (typeof accessMode)[number];
 
-const egressMode = ["car_pickup", "foot"];
+const egressMode = ["car_pickup", "foot"] as const;
 type EgressMode = (typeof egressMode)[number];
 
-const directMode = ["car", "bicycle"]
+const directMode = ["car", "bicycle"] as const;
 type DirectMode = (typeof directMode)[number];
 
 class Modes {
@@ -28,7 +28,7 @@ class Modes {
     accessMode: AccessMode;
 
     @IsIn(transportModes, { each: true })
-    transportModes: TransportModes;
+    transportModes: TransportModes[];
 
     @IsIn(egressMode, { each: true })
     egressMode: EgressMode;
