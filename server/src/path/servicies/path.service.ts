@@ -5,6 +5,7 @@ import { PathRequestDto } from "../dto/pathRequest.dto";
 @Injectable()
 export class PathService {
     private readonly otpGraphqlUrl = 'http://localhost:8080/otp/transmodel/v3';
+    private readonly otpGraphqlUrlGtfs = 'http://localhost:8080/otp/gtfs/v1';
     private readonly logger = new Logger(PathService.name, { timestamp: true })
     
     constructor() {}
@@ -152,5 +153,149 @@ export class PathService {
         json.arriveBy = request.arriveBy;
 
         return json;
+    }
+
+    async findPathGtfs(request: PathRequestDto): Promise<string> {
+        const query = `
+            query planConnection(
+                $origin: PlanLabeledLocationInput!
+                $destination: PlanLabeledLocationInput!
+                $dateTime: PlanDateTimeInput
+                $modes: PlanModesInput
+                $first: Int
+            ) {
+                planConnection(
+                    origin: $origin
+                    destination: $destination
+                    dateTime: $dateTime
+                    modes: $modes
+                    first: $first
+                ) {
+                    edges {
+                    cursor
+                    node {
+                        startTime
+                        endTime
+                        duration
+                            legs {
+                                    mode
+                                    startTime
+                                    endTime
+                                    realTime
+                                    distance
+                                    duration
+                                    from {
+                                        name
+                                        stop { id gtfsId }
+                                    }
+                                    to {
+                                        name
+                                        stop { id gtfsId }
+                                    }
+                                    trip {
+                                        tripHeadsign
+                                        gtfsId
+                                    }
+                                    route {
+                                        shortName
+                                        longName
+                                        gtfsId
+                                        color
+                                    }
+                                    agency {
+                                        name
+                                        gtfsId
+                                    }
+                                    legGeometry {
+                                        points
+                                        length
+                                    }   
+                                }
+                            }
+                        }
+                    }
+                }`;
+        const response = await fetch(this.otpGraphqlUrlGtfs, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    query,
+                    variables: this.requestToVariables(request),
+                })
+            });
+
+        this.logger.log(JSON.stringify(this.requestToVariables(request)));
+        const { data, errors } = await response.json();
+        this.logger.log(JSON.stringify(errors));
+        return JSON.stringify(data);
+    }
+
+    private requestToVariables(request: PathRequestDto) {
+        const dt = new Date(request.dateTime);
+
+        const date = dt.toLocaleDateString('en-CA');
+        const time = dt.toLocaleTimeString('en-GB', {
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+
+       const modes: {transit?: any} = {};
+
+        const transit: {
+            access?: string[];
+            egress?: string[];
+            transfer?: string[];
+            transit?: { mode: string }[];
+        } = {};
+        if (request.modes?.accessMode) {
+            transit.access = [request.modes.accessMode.toUpperCase()];
+        }
+
+        if (request.modes?.egressMode) {
+            transit.egress = [request.modes.egressMode.toUpperCase()];
+        }
+
+        if (request.modes?.transportModes?.length) {
+            transit.transit = request.modes.transportModes.map(m => ({
+                mode: m.toUpperCase()
+            }));
+        }
+
+        modes.transit = transit;
+
+        const dateTime: {latestArrival?: Date, earliestDeparture?: Date} = {}
+        if (request.arriveBy) {
+            dateTime.latestArrival = request.dateTime;
+        } else {
+            dateTime.earliestDeparture = request.dateTime;
+        }
+        return {
+              origin: {
+                location: {
+                    coordinate: {
+                        latitude: request.from.latitude,
+                        longitude: request.from.longitude
+                    }
+                }
+            },
+
+            destination: {
+                location: {
+                coordinate: {
+                    latitude: request.to.latitude,
+                    longitude: request.to.longitude
+                }
+                }
+            },
+
+            dateTime: dateTime,
+
+            modes: modes,
+
+            first: 5,
+            arriveBy: request.arriveBy ?? false
+        };
     }
 }

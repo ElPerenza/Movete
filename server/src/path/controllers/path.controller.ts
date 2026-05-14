@@ -8,7 +8,7 @@ export class PathController {
 
     @Post("/")
     async createPath(@Body() request: PathRequestDto): Promise<string> {
-        const path = await this.pathService.findPath(request);
+        const path = await this.pathService.findPathGtfs(request);
         return path;
     }
 

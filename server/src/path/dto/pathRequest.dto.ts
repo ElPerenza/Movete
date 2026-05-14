@@ -5,10 +5,10 @@ const transportModes = ["air", "bus", "cableway", "coach", "funicolar", "lift", 
 type TransportModes = (typeof transportModes)[number];
 
 //TODO verify how to configure OTP to make it understaned that we can travel with bike on trains
-const accessMode = ["car_pickup", "foot"] as const;
+const accessMode = ["car_pickup", "walk"] as const;
 type AccessMode = (typeof accessMode)[number];
 
-const egressMode = ["car_pickup", "foot"] as const;
+const egressMode = ["car_pickup", "walk"] as const;
 type EgressMode = (typeof egressMode)[number];
 
 const directMode = ["car", "bicycle"] as const;
