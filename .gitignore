@@ -1,3 +1,9 @@
 /node_modules
 .env
 *.rest
+
+# OpenTripPlanner
+/otp/data
+otp-shaded-*.jar
+/otp/graph.obj
+/otp/streetGraph.obj
