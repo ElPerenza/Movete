@@ -6,5 +6,3 @@ async function bootstrap() {
     await app.listen(process.env["PORT"] ?? 3000);
 }
 bootstrap();
-
-const a = { a: 2, b: 4, c: 6 };
