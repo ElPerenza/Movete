@@ -17,9 +17,13 @@
         @if (timesError) {
             <p class="text-red-500 text-xs p-2 bg-red-50 rounded">{{ timesError }}</p>
         } @else {
+            
             <div class="space-y-2 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
+                
                 @for (time of currentStopTimes; track time.tripId) {
-                    <div (click)="openTripDetails(time)" 
+
+                    <!-- Key data displayed per departure -->
+                    <div (click)="openTripDetails(time)"
                          class="flex items-center justify-between p-2 bg-gray-50 hover:bg-blue-100 rounded border border-gray-100 transition-colors cursor-pointer">
                         <div class="flex items-center gap-2 overflow-hidden">
                             <span class="bg-blue-600 text-white text-xs font-bold w-7 h-7 flex items-center justify-center rounded-md shrink-0 shadow-sm">
