@@ -1,5 +1,5 @@
-import { AfterViewInit, Component, ChangeDetectorRef} from "@angular/core";
-import { FormsModule } from "@angular/forms";
+import { AfterViewInit, Component, ChangeDetectorRef, ViewChild} from "@angular/core";
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import * as L from 'leaflet';
 import { Stop } from "../class/stop";
@@ -7,13 +7,30 @@ import { Path } from "../path/path";
 
 @Component({
     selector: "app-map",
-    imports: [FormsModule, Path],
+    imports: [ReactiveFormsModule, FormsModule, Path],
     templateUrl: "./map.html",
     styleUrl: "./map.css"
 })
 export class Map implements AfterViewInit{
     private map! : L.Map;
-    private markerLayer: L.LayerGroup = L.layerGroup();
+    private stopsLayerMarkerGroup: L.LayerGroup = L.layerGroup();
+    private _pathComponent!: Path;
+    @ViewChild(Path) set pathComponent(content: Path) {
+        if (content) { 
+            this._pathComponent = content;
+            // Wait for the component to be loaded
+            this.initDraggableFlags();
+            this.setupFormToMapSync();
+        }
+    }
+    private pathsLayer = L.layerGroup();
+    private flagsLayer = L.layerGroup();
+    private startMarker!: L.Marker;
+    private destinationMarker!: L.Marker;
+
+    private defaultStart: L.LatLngExpression = [46.067, 11.121]; // Trento Example
+    private defaultEnd: L.LatLngExpression = [46.070, 11.130];
+
     private baseUrl: String = 'http://localhost:3000/pois/stop/'
     private header: HttpHeaders = new HttpHeaders({ 'Content-Type' : 'application/json' });
     private panning: boolean = false;
@@ -21,6 +38,7 @@ export class Map implements AfterViewInit{
     public currentStops: Stop[] = [];
     public showSidebar: boolean = false;
     public selectedStopId: string | null = null;
+    public showPathForm = false;
 
     /**
      * Filter for the transport type, it is an array of object with the label, the value and if it is checked or not
@@ -55,14 +73,13 @@ export class Map implements AfterViewInit{
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(this.map);
 
-        this.markerLayer.addTo(this.map);
+        this.stopsLayerMarkerGroup.addTo(this.map);
 
         this.fetchStopsInBound();
         
         this.map.on('moveend', () => {
             //Check if this a panning move, if it is it dose not ask for new data
             if(!this.panning) {
-                console.log("not panning");
                 this.fetchStopsInBound();
             } else {
                 this.panning = false;
@@ -101,7 +118,7 @@ export class Map implements AfterViewInit{
      */
     private addStopsToMap(stops: Stop[]): void {
         //Clear the previews markers
-        this.markerLayer.clearLayers();
+        this.stopsLayerMarkerGroup.clearLayers();
         this.currentStops = stops;
 
         stops.forEach(stop => {
@@ -112,7 +129,7 @@ export class Map implements AfterViewInit{
                 this.showSidebar = true;
                 this.cdr.detectChanges();
             });
-            marker.addTo(this.markerLayer)
+            marker.addTo(this.stopsLayerMarkerGroup)
         })
         this.cdr.detectChanges();
     }
@@ -144,5 +161,106 @@ export class Map implements AfterViewInit{
      */
     public onFilterChange(): void {
         this.fetchStopsInBound();
+    }
+
+
+
+    togglePathForm() {
+        this.showPathForm = true;
+        this.updateMapLayers();
+    }
+
+  // This function is called when you click the back arrow
+    closeForm() {
+        this.showPathForm = false;
+        this.updateMapLayers();
+    }
+
+    private updateMapLayers() {
+        if (this.showPathForm) {
+
+            this.map.removeLayer(this.stopsLayerMarkerGroup);
+            this.flagsLayer.addTo(this.map);
+        } else {
+
+            this.flagsLayer.remove();
+            this.stopsLayerMarkerGroup.addTo(this.map);
+        }
+    }
+
+    private initDraggableFlags() {
+        // 1. Create Start Flag (Green)
+        this.startMarker = L.marker(this.defaultStart, {
+            draggable: true,
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+            })
+        });
+
+        // 2. Create Destination Flag (Red)
+        this.destinationMarker = L.marker(this.defaultEnd, {
+            draggable: true,
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+            })
+        });
+
+        // 3. Listen to Drag Events
+        this.startMarker.on('dragend', () => this.updateFormCoordinates());
+        this.destinationMarker.on('dragend', () => this.updateFormCoordinates());
+
+        // Add to our specialized layer
+        this.flagsLayer.addLayer(this.startMarker);
+        this.flagsLayer.addLayer(this.destinationMarker);
+        this.updateFormCoordinates();
+    }
+
+    private updateFormCoordinates() {
+        const data = {
+            start: this.startMarker?.getLatLng(),
+            arrive: this.destinationMarker?.getLatLng()
+        };
+
+        if (this._pathComponent) {
+            this._pathComponent.updateFormFromMap(data);
+        }
+        
+    }
+
+    setupFormToMapSync() {
+        if (!this._pathComponent || !this._pathComponent.form) return;
+
+        this._pathComponent.form.valueChanges.subscribe(val => {
+            const startLat = parseFloat(val.startLatitude);
+            const startLng = parseFloat(val.startLongitude);
+            const arriveLat = parseFloat(val.arriveLatitude);
+            const arriveLng = parseFloat(val.arriveLongitude);
+            console.log(val);
+            // Update Start Marker
+            if (!isNaN(startLat) && !isNaN(startLng)) {
+                const newLatLng = L.latLng(startLat, startLng);
+                // Only update if the position is actually different
+                if (!this.startMarker.getLatLng().equals(newLatLng)) {
+                    this.startMarker.setLatLng(newLatLng);
+                    this.map.panTo(newLatLng);
+                }
+            }
+
+            // Update Destination Marker
+            if (!isNaN(arriveLat) && !isNaN(arriveLng)) {
+                const newLatLng = L.latLng(arriveLat, arriveLng);
+                if (!this.destinationMarker.getLatLng().equals(newLatLng)) {
+                    this.destinationMarker.setLatLng(newLatLng);
+                    this.map.panTo(newLatLng);
+                }
+            }
+            
+        });
     }
 }

@@ -6,6 +6,88 @@
     <title>Document</title>
 </head>
 <body>
-    HELLO NIGGERS
+<div class="w-full bg-white">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" 
+          class="flex flex-wrap lg:flex-nowrap items-start lg:items-end gap-y-4 gap-x-6 w-full py-2">
+    
+        <div class="flex gap-4 w-full md:w-auto">
+            <div class="flex flex-col">
+                <label class="text-[10px] font-bold text-green-600 uppercase mb-1">Partenza</label>
+                <div class="flex gap-1">
+                    <input type="text" formControlName="startLatitude" class="w-20 md:w-24 p-1.5 border rounded text-xs bg-gray-50 focus:bg-white transition-colors">
+                    <input type="text" formControlName="startLongitude" class="w-20 md:w-24 p-1.5 border rounded text-xs bg-gray-50 focus:bg-white transition-colors">
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[10px] font-bold text-red-600 uppercase mb-1">Arrivo</label>
+                <div class="flex gap-1">
+                    <input type="text" formControlName="arriveLatitude" class="w-20 md:w-24 p-1.5 border rounded text-xs bg-gray-50 focus:bg-white transition-colors">
+                    <input type="text" formControlName="arriveLongitude" class="w-20 md:w-24 p-1.5 border rounded text-xs bg-gray-50 focus:bg-white transition-colors">
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-2 w-full md:w-auto">
+            <div class="flex flex-col">
+                <label class="text-[10px] font-bold text-gray-400 uppercase mb-1">Access</label>
+                <select formControlName="access" class="w-24 p-1.5 border rounded text-xs bg-white">
+                    <option value="">Select...</option>
+                    @for (opt of locationOptions; track opt.id) {
+                        <option [value]="opt.id">{{ opt.name }}</option>
+                    }
+                </select>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[10px] font-bold text-gray-400 uppercase mb-1">Egress</label>
+                <select formControlName="egress" class="w-24 p-1.5 border rounded text-xs bg-white">
+                    <option value="">Select...</option>
+                    @for (opt of locationOptions; track opt.id) {
+                        <option [value]="opt.id">{{ opt.name }}</option>
+                    }
+                </select>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[10px] font-bold text-gray-400 uppercase mb-1">Direct</label>
+                <select formControlName="direct" class="w-24 p-1.5 border rounded text-xs bg-white">
+                    <option value="">Select...</option>
+                    @for (opt of locationOptions; track opt.id) {
+                        <option [value]="opt.id">{{ opt.name }}</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="flex items-end gap-4 flex-1 min-w-[200px]">
+            <div class="relative flex-1 flex flex-col">
+                <label class="text-[10px] font-bold text-gray-400 uppercase mb-1">Trip Type</label>
+                <button type="button" (click)="toggleTripDropdown()"
+                        class="w-full flex justify-between items-center px-2 py-1.5 border rounded bg-white text-xs h-[34px]">
+                    <span class="truncate">{{ selectedTripsCount > 0 ? selectedTripsCount + ' selected' : 'Select trips...' }}</span>
+                    <svg class="w-3 h-3 text-gray-400 transition-transform" [class.rotate-180]="isTripDropdownOpen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </button>
+
+                @if (isTripDropdownOpen) {
+                    <div class="absolute top-full left-0 right-0 z-[1200] mt-1 bg-white border rounded shadow-2xl max-h-60 overflow-y-auto p-2">
+                        <div formArrayName="trips">
+                            @for (control of tripsFormArray.controls; track $index) {
+                                <label class="flex items-center p-2 hover:bg-blue-50 rounded cursor-pointer">
+                                    <input type="checkbox" [formControlName]="$index" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="ml-3 text-xs text-gray-700">{{ tripOptions[$index]?.name }}</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <button type="submit" [disabled]="form.invalid"
+                    class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 py-2 rounded font-bold text-[10px] uppercase h-[34px] flex-none transition-all">
+                CALCOLA
+            </button>
+        </div>
+    </form>
+</div>
 </body>
 </html>
