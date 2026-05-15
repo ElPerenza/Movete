@@ -1,4 +1,5 @@
 import { Component, ChangeDetectorRef } from "@angular/core";
+import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
@@ -9,20 +10,24 @@ import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } fr
 })
 export class Path {
     form!: FormGroup;
+    
+    private baseUrl: string = 'http://localhost:3000/path'
+    private header: HttpHeaders = new HttpHeaders({ 'Content-Type' : 'application/json' });
+
     isTripDropdownOpen = false;
 
     locationOptions = [
-        { id: 1, name: 'walk' },
-        { id: 2, name: 'car' }
+        { id: 'walk', name: 'walk' },
+        { id: 'car', name: 'car' }
     ];
 
     // Mock data for the Trip checkboxes
     tripOptions = [
-        { id: 'T1', name: 'bus' },
-        { id: 'T2', name: 'rail' }
+        { id: 'bus', name: 'bus' },
+        { id: 'rail', name: 'rail' }
     ];
 
-    constructor(private fb: FormBuilder, private cdr: ChangeDetectorRef) {}
+    constructor(private http: HttpClient, private fb: FormBuilder, private cdr: ChangeDetectorRef) {}
 
     ngOnInit(): void {
         this.form = this.fb.group({
@@ -59,8 +64,36 @@ export class Path {
 
     onSubmit() {
         if (this.form.valid) {
-            console.log('Searching paths for:', this.form.value);
-            // Logic to show results in the bottom part goes here
+            const raw = this.form.getRawValue();
+            const selectedTransportModes = raw.trips
+                .map((checked: boolean, index: number) => checked ? this.tripOptions[index].id : null)
+                .filter((mode: string | null) => mode !== null);
+            const payload = {
+                from: {
+                    latitude: parseFloat(raw.startLatitude),
+                    longitude: parseFloat(raw.startLongitude)
+                },
+                to: {
+                    latitude: parseFloat(raw.arriveLatitude),
+                    longitude: parseFloat(raw.arriveLongitude)
+                },
+                dateTime: new Date().toISOString(),
+                modes: {
+                    accessMode: raw.access || undefined,
+                    egressMode: raw.egress || undefined,
+                    directMode: raw.direct || undefined,
+                    transportModes: selectedTransportModes
+                },
+                arriveBy: false
+            }
+
+            this.http.post(this.baseUrl, payload, { headers: this.header }).subscribe({
+                next: (response) => {
+                console.log('Path found:', response);
+                // Here you would likely call a service to draw the path on the map
+                },
+                error: (err) => console.error('Error calculating path', err)
+            });
         }
     }
 
