@@ -155,6 +155,11 @@ export class PathService {
         return json;
     }
 
+    /**
+     * This method call the transmodel API of OTP for creating a path (in gtfs)
+     * @param request The parameter of the path the user want to create
+     * @returns A JSON that contain a list of possible path
+     */
     async findPathGtfs(request: PathRequestDto): Promise<string> {
         const query = `
             query planConnection(
@@ -233,14 +238,12 @@ export class PathService {
         return JSON.stringify(data);
     }
 
+    /**
+     * support method that transform request object in JSON format for OpenTripPlanner
+     * @param request 
+     * @returns The Json for the OTP query
+     */
     private requestToVariables(request: PathRequestDto) {
-        const dt = new Date(request.dateTime);
-
-        const date = dt.toLocaleDateString('en-CA');
-        const time = dt.toLocaleTimeString('en-GB', {
-            hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
-
        const modes: {transit?: any} = {};
 
         const transit: {
