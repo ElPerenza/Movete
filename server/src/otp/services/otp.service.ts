@@ -1,5 +1,6 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { StopTime } from '../models/stop-time.model';
+import { ConfigService } from '@nestjs/config'
 
 
 /**
@@ -19,8 +20,11 @@ export class OtpService {
 
     // Official GTFS endpoint for OTP2
     //private readonly otpGraphqlUrl = 'http://localhost:8080/otp/gtfs/v1';
-    private readonly otpGraphqlUrl = 'http://localhost:8080/otp/routers/default/index/graphql';
+    private readonly OTP_GRAPHQL_URL: string;
 
+    constructor(configService: ConfigService) {
+        this.OTP_GRAPHQL_URL = configService.getOrThrow("OTP_GRAPHQL_URL");
+    }
 
     // Accepts an array of strings to handle multiple GTFS IDs for a single logical stop
     async getStopTimes(gtfsIds: string[]): Promise<StopTime[]> {
@@ -50,7 +54,7 @@ export class OtpService {
         try {
             // POST requests to the local OTP GraphQL API in parallel
             const fetchPromises = gtfsIds.map(async (gtfsId) => {
-                const response = await fetch(this.otpGraphqlUrl, {
+                const response = await fetch(this.OTP_GRAPHQL_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -144,7 +148,7 @@ export class OtpService {
         `;
 
         try {
-            const response = await fetch(this.otpGraphqlUrl, {
+            const response = await fetch(this.OTP_GRAPHQL_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({
