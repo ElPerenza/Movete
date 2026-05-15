@@ -10,7 +10,11 @@ export interface TripDetail {
     delay: number;
     realtime: boolean;
 }
-
+/**
+ * Component for displaying transport timetables for a specific stop.
+ * Shows upcoming departures, calculating real-time delays or scheduled times.
+ * Triggers a backend call whenever the `stop` input property changes (via ngOnChanges).
+ */
 @Component({
     selector: 'app-timetable',
     imports: [DatePipe, DecimalPipe],
@@ -28,6 +32,7 @@ export class Timetable implements OnChanges {
     public tripDetails: TripDetail[] = [];
     public isLoadingTrip: boolean = false;
 
+    //Endipoint backend
     private baseUrl: string = 'http://localhost:3000/pois/stop/';
 
     constructor(private http: HttpClient, private cdr: ChangeDetectorRef) { }

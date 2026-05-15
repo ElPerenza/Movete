@@ -1,12 +1,27 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { StopTime } from '../models/stop-time.model';
 
+
+/**
+ * Service responsible for interacting with the local OTP2 GraphQL APIs.
+ * Normalizes raw OTP responses by mapping them to the application's DTOs.
+ */
+
 @Injectable()
 export class OtpService {
+    /**
+    * Retrieves upcoming departures for one or more GTFS stops.
+    * Performs parallel calls to OTP2 if multiple IDs are provided (useful for logical stops with multiple platforms).
+    * * gtfsIds is an array of strings representing the GTFS IDs of the stops.
+    * --> returns promise resolving to a chronologically sorted array of `StopTime` objects.
+    */
+
 
     // Official GTFS endpoint for OTP2
     //private readonly otpGraphqlUrl = 'http://localhost:8080/otp/gtfs/v1';
     private readonly otpGraphqlUrl = 'http://localhost:8080/otp/routers/default/index/graphql';
+
+
     // Accepts an array of strings to handle multiple GTFS IDs for a single logical stop
     async getStopTimes(gtfsIds: string[]): Promise<StopTime[]> {
         const query = `
@@ -72,7 +87,7 @@ export class OtpService {
                     // If headsign is empty/unknown --> null
                     stopTime.headsign = st.headsign || null;
 
-                    stopTime.tripId = st.trip?.route?.shortName || null;
+                    stopTime.routeShortName = st.trip?.route?.shortName || null;
 
                     // Extract the parent trip's GTFS ID
                     stopTime.tripId = st.trip?.gtfsId;
