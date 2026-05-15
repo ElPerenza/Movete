@@ -31,7 +31,7 @@ export class Map implements AfterViewInit{
     private defaultStart: L.LatLngExpression = [46.067, 11.121]; // Trento Example
     private defaultEnd: L.LatLngExpression = [46.070, 11.130];
 
-    private baseUrl: String = 'http://localhost:3000/pois/stop/'
+    private baseUrl: string = 'http://localhost:3000/pois/stop/'
     private header: HttpHeaders = new HttpHeaders({ 'Content-Type' : 'application/json' });
     private panning: boolean = false;
 
