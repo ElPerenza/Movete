@@ -2,8 +2,10 @@ import { AfterViewInit, Component, ChangeDetectorRef, ViewChild} from "@angular/
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import * as L from 'leaflet';
+import * as polyline from '@mapbox/polyline';
 import { Stop } from "../class/stop";
 import { Path } from "../path/path";
+
 
 @Component({
     selector: "app-map",
@@ -21,6 +23,7 @@ export class Map implements AfterViewInit{
             // Wait for the component to be loaded
             this.initDraggableFlags();
             this.setupFormToMapSync();
+            this.setupItineraryListeners();
         }
     }
     private pathsLayer = L.layerGroup();
@@ -39,7 +42,10 @@ export class Map implements AfterViewInit{
     public showSidebar: boolean = false;
     public selectedStopId: string | null = null;
     public showPathForm = false;
+    Math = Math
 
+    public calculatedRoutes: any[] = [];
+    public activeItineraryIndex: number = 0;
     /**
      * Filter for the transport type, it is an array of object with the label, the value and if it is checked or not
      * TODO here we will add poi types like stops, park and park with sensor.
@@ -74,6 +80,7 @@ export class Map implements AfterViewInit{
         }).addTo(this.map);
 
         this.stopsLayerMarkerGroup.addTo(this.map);
+        this.pathsLayer.addTo(this.map);
 
         this.fetchStopsInBound();
         
@@ -163,19 +170,25 @@ export class Map implements AfterViewInit{
         this.fetchStopsInBound();
     }
 
-
-
+    /**
+     * this method allow the Path component
+     */
     togglePathForm() {
         this.showPathForm = true;
         this.updateMapLayers();
     }
 
-  // This function is called when you click the back arrow
+    // This function is called when you click the back arrow
     closeForm() {
         this.showPathForm = false;
+        this.calculatedRoutes = []; 
+        this.pathsLayer.clearLayers();
         this.updateMapLayers();
     }
 
+    /**
+     * this method shwos the navbar and the form form from Path component
+     */
     private updateMapLayers() {
         if (this.showPathForm) {
 
@@ -188,8 +201,21 @@ export class Map implements AfterViewInit{
         }
     }
 
+    /**
+     * this method handles the draggable marker of the Path componenet
+     * @returns exit method
+     */
     private initDraggableFlags() {
-        // 1. Create Start Flag (Green)
+        if (this.startMarker && this.destinationMarker) {
+            // Clear the container layer group to ensure no visual ghosts
+            this.flagsLayer.clearLayers();
+            
+            // Re-add the existing instances (retaining their dragged coordinates!)
+            this.flagsLayer.addLayer(this.startMarker);
+            this.flagsLayer.addLayer(this.destinationMarker);
+            return;
+        }
+
         this.startMarker = L.marker(this.defaultStart, {
             draggable: true,
             icon: L.icon({
@@ -200,7 +226,6 @@ export class Map implements AfterViewInit{
             })
         });
 
-        // 2. Create Destination Flag (Red)
         this.destinationMarker = L.marker(this.defaultEnd, {
             draggable: true,
             icon: L.icon({
@@ -221,6 +246,9 @@ export class Map implements AfterViewInit{
         this.updateFormCoordinates();
     }
 
+    /**
+     * this method updates the form in the Path component evry time the user move the marker
+     */
     private updateFormCoordinates() {
         const data = {
             start: this.startMarker?.getLatLng(),
@@ -233,6 +261,68 @@ export class Map implements AfterViewInit{
         
     }
 
+    /**
+     * This method setup the Listener for the Path component Itinerary search
+     */
+    private setupItineraryListeners() {
+        if (!this._pathComponent) return;
+
+        // Listen for new query responses coming from the HTTP submit block
+        this._pathComponent.routesCalculated?.subscribe((edges: any[]) => {
+            this.calculatedRoutes = edges || [];
+            this.activeItineraryIndex = 0;
+            this.drawSelectedItinerary();
+            this.cdr.detectChanges();
+        });
+    }
+
+    public selectItinerary(index: number) {
+        this.activeItineraryIndex = index;
+        this.drawSelectedItinerary();
+    }
+
+    /**
+     * Decodes polyline collections and visually shifts active camera frames
+     */
+    private drawSelectedItinerary() {
+        this.pathsLayer.clearLayers();
+
+        const activeRoute = this.calculatedRoutes[this.activeItineraryIndex];
+        if (!activeRoute || !activeRoute.node || !activeRoute.node.legs) return;
+
+        const bounds = L.latLngBounds([]);
+
+        activeRoute.node.legs.forEach((leg: any) => {
+            if (!leg.legGeometry || !leg.legGeometry.points) return;
+
+            // Use Mapbox polyline dependency tool decoder
+            const decodedPoints: [number, number][] = polyline.decode(leg.legGeometry.points);
+            
+            // Format styling guidelines matchers based on transport variants types
+            const pathStyle: L.PolylineOptions = {
+                color: leg.mode === 'WALK' ? '#3b82f6' : '#ef4444', 
+                weight: 6,
+                opacity: leg.mode === 'WALK' ? 0.7 : 0.9,
+                dashArray: leg.mode === 'WALK' ? '8, 12' : undefined
+            };
+
+            const segmentPolyline = L.polyline(decodedPoints, pathStyle);
+            segmentPolyline.addTo(this.pathsLayer);
+            bounds.extend(segmentPolyline.getBounds());
+        });
+
+        if (bounds.isValid()) {
+            this.map.fitBounds(bounds, { padding: [50, 50] });
+        }
+    }
+
+    public formatTime(timestamp: number): string {
+        return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    /**
+     * This method change the markers based on the Path Form coordinates
+     */
     setupFormToMapSync() {
         if (!this._pathComponent || !this._pathComponent.form) return;
 
@@ -262,5 +352,34 @@ export class Map implements AfterViewInit{
             }
             
         });
+    }
+
+    /**
+     * This method reset the Path creation 
+     */
+    public resetSearch(): void {
+        // 1. Clear out the active map paths lines
+        this.pathsLayer.clearLayers();
+        
+        // 2. Clear out the alternatives data array
+        this.calculatedRoutes = [];
+        this.activeItineraryIndex = 0;
+
+        // 3. Reset the form coordinates inside the child component back to defaults
+        if (this._pathComponent) {
+            this._pathComponent.updateFormFromMap({
+                start: L.latLng(this.defaultStart as L.LatLngTuple),
+                arrive: L.latLng(this.defaultEnd as L.LatLngTuple)
+            });
+        }
+
+        // 4. Force markers back to original default positions
+        this.startMarker.setLatLng(this.defaultStart);
+        this.destinationMarker.setLatLng(this.defaultEnd);
+        
+        // 5. Center map view back to Trento default
+        this.map.setView([46.0667, 11.1333], 15);
+        
+        this.cdr.detectChanges();
     }
 }

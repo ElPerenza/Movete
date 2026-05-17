@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef } from "@angular/core";
+import { Component, ChangeDetectorRef, OnInit, EventEmitter, Output } from "@angular/core";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 
@@ -8,8 +8,11 @@ import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } fr
     templateUrl: "./path.html",
     styleUrl: "./path.css"
 })
-export class Path {
+export class Path implements OnInit{
+    @Output() routesCalculated = new EventEmitter<any[]>();
+    
     form!: FormGroup;
+    
     
     private baseUrl: string = 'http://localhost:3000/path'
     private header: HttpHeaders = new HttpHeaders({ 'Content-Type' : 'application/json' });
@@ -30,6 +33,10 @@ export class Path {
     constructor(private http: HttpClient, private fb: FormBuilder, private cdr: ChangeDetectorRef) {}
 
     ngOnInit(): void {
+        const now = new Date();
+        const localISOTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                            .toISOString()
+                            .slice(0, 16);
         this.form = this.fb.group({
         startLatitude: ['', [Validators.required, Validators.pattern(/^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,15}$/)]],
         startLongitude: ['', [Validators.required, Validators.pattern(/^-?((1[0-7]|[1-9])?\d|[1-9]0)\.{1}\d{1,15}$/)]],
@@ -39,6 +46,8 @@ export class Path {
         access: [''],
         egress: [''],
         direct: [''],
+        dateTime: [localISOTime, Validators.required],
+        arriveBy: [false],
         trips: this.fb.array([], Validators.required) // FormArray for checkboxes
         });
 
@@ -77,20 +86,23 @@ export class Path {
                     latitude: parseFloat(raw.arriveLatitude),
                     longitude: parseFloat(raw.arriveLongitude)
                 },
-                dateTime: new Date().toISOString(),
+                dateTime: new Date(raw.dateTime).toISOString(),
                 modes: {
                     accessMode: raw.access || undefined,
                     egressMode: raw.egress || undefined,
                     directMode: raw.direct || undefined,
                     transportModes: selectedTransportModes
                 },
-                arriveBy: false
+                arriveBy: raw.arriveBy
             }
 
-            this.http.post(this.baseUrl, payload, { headers: this.header }).subscribe({
-                next: (response) => {
-                console.log('Path found:', response);
-                // Here you would likely call a service to draw the path on the map
+            this.http.post<any>(this.baseUrl, payload, { headers: this.header }).subscribe({
+                next: (res) => {
+                    console.log('Path found:', res);
+                    if (res?.planConnection?.edges) {
+                    // Emit up directly to our tracking element parent hook
+                    this.routesCalculated.emit(res.planConnection.edges);
+                    }
                 },
                 error: (err) => console.error('Error calculating path', err)
             });

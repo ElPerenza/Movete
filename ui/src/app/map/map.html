@@ -16,18 +16,19 @@
             <div class="w-full bg-white border-b border-gray-200 flex flex-col lg:flex-row min-h-[5rem] items-center z-[1001] shadow-sm py-2 lg:py-0">
             
                 <div class="w-full lg:w-[30%] px-4 py-2 lg:py-0 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-gray-100">
-                    <h2 class="text-sm lg:text-lg font-bold text-gray-800 leading-tight">Risultati Ricerca</h2>
-                    <p class="hidden sm:block text-[9px] text-gray-400 uppercase font-bold tracking-wider">Percorsi Disponibili</p>
-                </div>
-
-                <div class="w-full lg:w-[70%] px-4 flex flex-col sm:flex-row items-center gap-4">
-                    <div class="flex items-center gap-2 border-r border-gray-100 pr-4 h-8 hidden sm:flex">
-                        <button (click)="closeForm()" class="text-gray-400 hover:text-blue-600">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <div class="flex items-center gap-2 border-r border-gray-100 pr-4 h-8  sm:flex w-full">
+                        <h2 class="text-sm lg:text-lg font-bold text-gray-800 leading-tight">Risultati Ricerca</h2>
+                        
+                        <button (click)="closeForm()" class="text-gray-400 hover:text-blue-600 ml-auto">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
                         </button>
                         <span class="text-xs font-bold text-gray-800 whitespace-nowrap">Fermate</span>
                     </div>
+                </div>
 
+                <div class="w-full lg:w-[70%] px-4 flex flex-col sm:flex-row items-center gap-4">
                     <div class="w-full flex-1">
                         <app-path></app-path>
                     </div>
@@ -77,14 +78,61 @@
                         </ul>
 
                     } @else {
-                        <div class="flex flex-col items-center justify-center mt-20 text-gray-400 text-center px-4">
-                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <svg class="w-8 h-8 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A2 2 0 013 15.487V6a2 2 0 011.106-1.789l5.447-2.724a2 2 0 011.894 0l5.447 2.724A2 2 0 0118 6v9.487a2 2 0 01-1.106 1.789L11.447 20a2 2 0 01-1.894 0z"/>
+                        <div class="flex items-center justify-between w-full mb-3">
+                            <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Percorsi Disponibili</span>
+                            
+                            <button (click)="resetSearch()" 
+                                    class="text-[11px] font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2 py-1 rounded">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                 </svg>
-                            </div>
-                            <p class="text-sm italic">Definisci i punti sulla mappa e clicca "Calcola" per visualizzare i risultati qui.</p>
+                                Resetta
+                            </button>
                         </div>
+                        @if (calculatedRoutes.length > 0) {
+                            <div class="flex flex-col gap-3">
+                                @for (route of calculatedRoutes; track $index) {
+                                    <div (click)="selectItinerary($index)"
+                                        [class.border-blue-500]="activeItineraryIndex === $index"
+                                        [class.bg-blue-50]="activeItineraryIndex === $index"
+                                        class="p-4 border rounded-xl bg-white hover:shadow-md cursor-pointer transition-all border-gray-200 flex flex-col gap-2.5">
+                                        
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-bold text-sm text-gray-800">
+                                                {{ formatTime(route.node.startTime) }} - {{ formatTime(route.node.endTime) }}
+                                            </span>
+                                            <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                                                {{ Math.round(route.node.duration / 60) }} min
+                                            </span>
+                                        </div>
+
+                                        <div class="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none flex-wrap">
+                                            @for (leg of route.node.legs; track $index) {
+                                                <div class="flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded text-[11px] font-medium whitespace-nowrap">
+                                                    @if (leg.mode === 'WALK') {
+                                                        <span>🚶 {{ Math.round(leg.distance) }}m</span>
+                                                    } @else {
+                                                        <span>🚌 {{ leg.mode }}</span>
+                                                    }
+                                                </div>
+                                                @if (!$last) {
+                                                    <span class="text-gray-300 text-xs font-bold">→</span>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        } @else {
+                            <div class="flex flex-col items-center justify-center mt-20 text-gray-400 text-center px-4">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                    <svg class="w-8 h-8 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A2 2 0 013 15.487V6a2 2 0 011.106-1.789l5.447-2.724a2 2 0 011.894 0l5.447 2.724A2 2 0 0118 6v9.487a2 2 0 01-1.106 1.789L11.447 20a2 2 0 01-1.894 0z"/>
+                                    </svg>
+                                </div>
+                                <p class="text-sm italic">Definisci i punti sulla mappa e clicca "Calcola" per visualizzare i risultati qui.</p>
+                            </div>
+                        }
                     }
                 </div>
             </div>
