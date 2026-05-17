@@ -44,6 +44,7 @@ export class PathRequestDto {
     @IsNotEmptyObject()
     @Type(() => Coordinates)
     to: Coordinates;
+    @IsNotEmptyObject()
     dateTime: Date;
 
     @Type(() => Modes)
