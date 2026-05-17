@@ -69,7 +69,7 @@
 
                         <ul class="space-y-2">
                             @for (stop of currentStops; track stop.id) {
-                                <li (click)="selectStop(stop)" 
+                                <li (click)="selectStop(stop)" [id]="'stop-card-' + stop.id"
                                     class="p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
                                     <div class="font-medium text-gray-800">{{ stop.name }}</div>
                                     

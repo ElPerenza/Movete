@@ -158,6 +158,14 @@ export class Map implements AfterViewInit {
             this.selectedStopId = stop.id;
             this.panning = true;
             this.map.panTo([stop.location.coordinates[1], stop.location.coordinates[0]]);
+            const targetElement = document.getElementById(`stop-card-${stop.id}`);
+    
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'instant', // Smooth slide animation
+                    block: 'start'    // Brings it into view minimalistically without jarring the whole page
+                });
+            }
         }
     }
 
