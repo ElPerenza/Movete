@@ -1,6 +1,7 @@
 import { Component, ChangeDetectorRef, OnInit, EventEmitter, Output } from "@angular/core";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
+import { environment } from "../../environments/environment";
 
 @Component({
     selector: "app-path",
@@ -14,7 +15,7 @@ export class Path implements OnInit{
     form!: FormGroup;
     
     
-    private baseUrl: string = 'http://localhost:3000/path'
+    private baseUrl: string = new URL("path", environment.apiUrl).href;
     private header: HttpHeaders = new HttpHeaders({ 'Content-Type' : 'application/json' });
 
     isTripDropdownOpen = false;

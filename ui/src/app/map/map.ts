@@ -9,6 +9,7 @@ import { Path } from "../path/path";
 
 import { StopTime } from "../class/stop-time"
 import { Timetable } from "../timetable/timetable";
+import { environment } from "../../environments/environment";
 
 @Component({
     selector: "app-map",
@@ -37,7 +38,7 @@ export class Map implements AfterViewInit {
     private defaultStart: L.LatLngExpression = [46.067, 11.121]; // Trento Example
     private defaultEnd: L.LatLngExpression = [46.070, 11.130];
 
-    private baseUrl: string = 'http://localhost:3000/pois/stop/'
+    private baseUrl: string = new URL('pois/stop/', environment.apiUrl).href;
     private header: HttpHeaders = new HttpHeaders({ 'Content-Type': 'application/json' });
     private panning: boolean = false;
 
