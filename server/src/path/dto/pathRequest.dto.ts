@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, ValidateNested } from "class-validator";
+import { IsIn, IsOptional, ValidateNested, IsNotEmptyObject } from "class-validator";
 import { Type } from "class-transformer";
 
 const transportModes = ["air", "bus", "cableway", "coach", "funicolar", "lift", "metro", "monorail", "rail", "taxi", "tram", "trolleybus", "unknown", "water"] as const;
@@ -38,9 +38,10 @@ class Coordinates {
 }
 
 export class PathRequestDto {
+    @IsNotEmptyObject()
     @Type(() => Coordinates)
     from: Coordinates;
-
+    @IsNotEmptyObject()
     @Type(() => Coordinates)
     to: Coordinates;
     dateTime: Date;
