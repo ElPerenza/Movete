@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "description": "",
-  "workspaces": ["server", "ui"],
+  "workspaces": [
+    "server",
+    "ui"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ElPerenza/Movete.git"
@@ -12,5 +15,11 @@
   "bugs": {
     "url": "https://github.com/ElPerenza/Movete/issues"
   },
-  "homepage": "https://github.com/ElPerenza/Movete#readme"
+  "homepage": "https://github.com/ElPerenza/Movete#readme",
+  "dependencies": {
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.21"
+  }
 }

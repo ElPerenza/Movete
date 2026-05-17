@@ -1,4 +1,6 @@
 import { Module } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { MongooseModule } from "@nestjs/mongoose";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { RealtimeModule } from './realtime/realtime.module';
@@ -7,7 +9,26 @@ import { ConfigModule } from "@nestjs/config";
 
 @Module({
     imports: [ConfigModule.forRoot(), ScheduleModule.forRoot(), RealtimeModule],
+import { PoiModule } from "./poi/poi.module";
+
+@Module({
+    imports: [
+        ConfigModule.forRoot(),
+        MongooseModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: async (configService: ConfigService) => {
+                return {
+                    uri: configService.get<string>("MONGODB_URL"),
+                    user: configService.get<string>("MONGODB_USER"),
+                    pass: configService.get<string>("MONGODB_PASSWORD"),
+                    dbName: configService.get<string>("MONGODB_DB_NAME"),
+                };
+            }
+        }),
+        PoiModule,
+    ],
     controllers: [AppController],
     providers: [AppService]
 })
-export class AppModule {}
+export class AppModule { }
