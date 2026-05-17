@@ -6,7 +6,7 @@ export class Point {
     
     @Expose()
     @IsIn(["Point"])
-    type: "Point";
+    type: "Point" = "Point";
 
     @Expose()
     @IsLongitudeLatitudeTuple()
