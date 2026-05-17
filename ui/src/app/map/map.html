@@ -89,40 +89,106 @@
                                 Resetta
                             </button>
                         </div>
+                        
                         @if (calculatedRoutes.length > 0) {
-                            <div class="flex flex-col gap-3">
-                                @for (route of calculatedRoutes; track $index) {
-                                    <div (click)="selectItinerary($index)"
-                                        [class.border-blue-500]="activeItineraryIndex === $index"
-                                        [class.bg-blue-50]="activeItineraryIndex === $index"
-                                        class="p-4 border rounded-xl bg-white hover:shadow-md cursor-pointer transition-all border-gray-200 flex flex-col gap-2.5">
+                            
+                            @for (route of calculatedRoutes; track $index) {
+                            <div class="mb-3 border rounded-xl overflow-hidden bg-white shadow-sm transition-all"
+                                [class.border-blue-500]="activeItineraryIndex === $index"
+                                [class.ring-2]="activeItineraryIndex === $index"
+                                [class.ring-blue-100]="activeItineraryIndex === $index">
+                                
+                                <div class="p-4 cursor-pointer hover:bg-gray-50 transition-colors" (click)="selectItinerary($index)">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-700 text-base">
+                                    {{ formatTime(route.node.startTime) }} - {{ formatTime(route.node.endTime) }}
+                                    </span>
+                                    <span class="bg-blue-50 text-blue-600 font-semibold text-xs px-2.5 py-1 rounded-full">
+                                    {{ Math.round(route.node.duration / 60) }} min
+                                    </span>
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 mt-3">
+                                    @for (leg of route.node.legs; track $index) {
+                                    <div class="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+                                        @if (leg.mode === 'WALK') { 🚶‍♂️ }
+                                        @else if (leg.mode === 'BUS') { 🚌 {{ leg.route?.shortName }} }
+                                        @else if (leg.mode === 'RAIL') { 🚆 {{ leg.route?.shortName }} }
+                                        @else { 🗺️ }
+                                    </div>
+                                    @if (!$last) {
+                                        <span class="text-gray-300 font-bold text-sm">→</span>
+                                    }
+                                    }
+                                </div>
+                                </div>
+
+                                @if (activeItineraryIndex === $index) {
+                                <div class="border-t border-gray-100 bg-slate-50 p-4 transition-all">
+                                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Dettaglio Percorso</h4>
+                                    
+                                    <div class="relative border-l-2 border-dashed border-gray-300 ml-3 pl-5 space-y-5">
+                                    @for (leg of route.node.legs; track $index) {
+                                        <div class="relative text-sm">
                                         
-                                        <div class="flex justify-between items-center">
-                                            <span class="font-bold text-sm text-gray-800">
-                                                {{ formatTime(route.node.startTime) }} - {{ formatTime(route.node.endTime) }}
-                                            </span>
-                                            <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
-                                                {{ Math.round(route.node.duration / 60) }} min
+                                        <span class="absolute -left-[29px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-slate-50"
+                                                [class.bg-blue-500]="leg.mode === 'WALK'"
+                                                [class.bg-amber-500]="leg.mode === 'BUS'"
+                                                [class.bg-red-500]="leg.mode === 'RAIL'">
+                                        </span>
+
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                            <p class="font-bold text-gray-800">
+                                                @if (leg.mode === 'WALK') {
+                                                Cammina fino a <span class="text-gray-600 font-medium">{{ leg.to.name }}</span>
+                                                } @else if (leg.mode === 'BUS') {
+                                                Prendi Bus <span class="bg-sky-500 text-white px-1.5 py-0.5 rounded font-mono text-xs">{{ leg.route?.shortName }}</span> 
+                                                direzione {{ leg.trip?.tripHeadsign || leg.to.name }}
+                                                } @else if (leg.mode === 'RAIL') {
+                                                Prendi Treno <span class="bg-red-600 text-white px-1.5 py-0.5 rounded font-mono text-xs">{{ leg.route?.shortName }}</span> 
+                                                ({{ leg.route?.longName }})
+                                                }
+                                            </p>
+                                            
+                                            @if (leg.mode !== 'WALK') {
+                                                <p class="text-xs text-gray-500 mt-1">
+                                                <strong class="text-gray-600">Da:</strong> {{ leg.from.name }}
+                                                </p>
+                                                <p class="text-xs text-gray-500">
+                                                <strong class="text-gray-600">A:</strong> {{ leg.to.name }}
+                                                </p>
+                                            }
+
+                                            <p class="text-xs text-gray-400 mt-1">
+                                                {{ (leg.distance / 1000).toFixed(2) }} km • {{ getLegDuration(leg.startTime, leg.endTime) }} min
+                                            </p>
+                                            </div>
+
+                                            <span class="text-xs font-mono font-semibold text-gray-500 text-right shrink-0">
+                                            {{ formatTime(leg.startTime) }}
                                             </span>
                                         </div>
 
-                                        <div class="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none flex-wrap">
-                                            @for (leg of route.node.legs; track $index) {
-                                                <div class="flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded text-[11px] font-medium whitespace-nowrap">
-                                                    @if (leg.mode === 'WALK') {
-                                                        <span>🚶 {{ Math.round(leg.distance) }}m</span>
-                                                    } @else {
-                                                        <span>🚌 {{ leg.mode }}</span>
-                                                    }
-                                                </div>
-                                                @if (!$last) {
-                                                    <span class="text-gray-300 text-xs font-bold">→</span>
-                                                }
-                                            }
+                                        </div>
+                                    }
+                                    
+                                    <div class="relative text-sm pt-1">
+                                        <span class="absolute -left-[29px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 ring-4 ring-slate-50"></span>
+                                        <div class="flex justify-between">
+                                        <p class="font-bold text-emerald-700">Arrivo a destinazione</p>
+                                        <span class="text-xs font-mono font-semibold text-emerald-600">
+                                            {{ formatTime(route.node.endTime) }}
+                                        </span>
                                         </div>
                                     </div>
+
+                                    </div>
+                                </div>
                                 }
+
                             </div>
+                            }        
                         } @else {
                             <div class="flex flex-col items-center justify-center mt-20 text-gray-400 text-center px-4">
                                 <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">

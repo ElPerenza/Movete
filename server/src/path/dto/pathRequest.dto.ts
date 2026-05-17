@@ -11,7 +11,7 @@ type AccessMode = (typeof accessMode)[number];
 const egressMode = ["car_pickup", "walk"] as const;
 type EgressMode = (typeof egressMode)[number];
 
-const directMode = ["car", "bicycle"] as const;
+const directMode = ["walk", "car", "bicycle"] as const;
 type DirectMode = (typeof directMode)[number];
 
 class Modes {

@@ -244,7 +244,7 @@ export class PathService {
      * @returns The Json for the OTP query
      */
     private requestToVariables(request: PathRequestDto) {
-       const modes: {transit?: any} = {};
+       const modes: {transit?: any, direct?: string[], directOnly: boolean, transitOnly: boolean} = {directOnly: false, transitOnly: false};
 
         const transit: {
             access?: string[];
@@ -260,13 +260,19 @@ export class PathService {
             transit.egress = [request.modes.egressMode.toUpperCase()];
         }
 
+        if (request.modes?.directMode) {
+            modes.direct = [request.modes.directMode.toUpperCase()];
+        }
+
         if (request.modes?.transportModes?.length) {
             transit.transit = request.modes.transportModes.map(m => ({
                 mode: m.toUpperCase()
             }));
         }
 
+
         modes.transit = transit;
+        
 
         const dateTime: {latestArrival?: Date, earliestDeparture?: Date} = {}
         if (request.arriveBy) {
@@ -275,7 +281,7 @@ export class PathService {
             dateTime.earliestDeparture = request.dateTime;
         }
         return {
-              origin: {
+            origin: {
                 location: {
                     coordinate: {
                         latitude: request.from.latitude,
@@ -298,7 +304,18 @@ export class PathService {
             modes: modes,
 
             first: 5,
-            arriveBy: request.arriveBy ?? false
+            arriveBy: request.arriveBy ?? false,
+
+            preferences: {
+                "street": {
+                    "walk": {
+                        "boardCost": 100,
+                        "reluctance": 1.0,    
+                        "safetyFactor": 0.25,
+                        "speed": 1.43          
+                    }
+                }
+            }
         };
     }
 }

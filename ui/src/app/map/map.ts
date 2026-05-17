@@ -382,4 +382,9 @@ export class Map implements AfterViewInit{
         
         this.cdr.detectChanges();
     }
+
+    public getLegDuration(startTime: number, endTime: number): number {
+        const diffMs = endTime - startTime;
+        return Math.round(diffMs / 1000 / 60);
+    }
 }
