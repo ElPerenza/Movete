@@ -4,6 +4,7 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { PoiModule } from "./poi/poi.module";
+import { PathModule } from './path/path.module';
 
 @Module({
     imports: [
@@ -21,6 +22,7 @@ import { PoiModule } from "./poi/poi.module";
             }
         }),
         PoiModule,
+        PathModule,
     ],
     controllers: [AppController],
     providers: [AppService]
