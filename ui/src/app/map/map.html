@@ -69,14 +69,26 @@
 
                         <ul class="space-y-2">
                             @for (stop of currentStops; track stop.id) {
-                                <li (click)="selectStop(stop)" class="p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
-                                    <div class="font-medium text-gray-800">{{ stop.name }}</div>
-                                </li>
-                            } @empty {
-                                <li class="text-center text-gray-500 mt-10">Nessuna fermata trovata.</li>
+                                < (click)="selectStop(stop)" 
+                                class="p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
+                                <div class="font-medium text-gray-800">{{ stop.name }}</div>
+                                
+                                @if (selectedStopId === stop.id) {
+                                    <div class="mt-2 text-sm text-gray-600 bg-white p-3 rounded border-l-4 border-blue-500 shadow-sm">
+                                        <app-timetable [stop]="stop"></app-timetable>
+                                    <ul class="space-y-2">
+                                        @for (stop of currentStops; track stop.id) {
+                                            <li (click)="selectStop(stop)" class="p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
+                                                <div class="font-medium text-gray-800">{{ stop.name }}</div>
+                                            </li>
+                                        } @empty {
+                                            <li class="text-center text-gray-500 mt-10">Nessuna fermata trovata.</li>
+                                        }
+                                    </ul>
+                                    </div>
+                                }
                             }
                         </ul>
-
                     } @else {
                         <div class="flex items-center justify-between w-full mb-3">
                             <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Percorsi Disponibili</span>
