@@ -32,6 +32,9 @@ export class Path implements OnInit{
 
     constructor(private http: HttpClient, private fb: FormBuilder, private cdr: ChangeDetectorRef) {}
 
+    /**
+     * Init the form with the vailidators.
+     */
     ngOnInit(): void {
         const now = new Date();
         const localISOTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -71,6 +74,9 @@ export class Path implements OnInit{
         this.isTripDropdownOpen = !this.isTripDropdownOpen;
     }
 
+    /**
+     * This method handle the "variables" for the gtfs query and pass the res to the map.ts
+     */
     onSubmit() {
         if (this.form.valid) {
             const raw = this.form.getRawValue();
@@ -100,8 +106,8 @@ export class Path implements OnInit{
                 next: (res) => {
                     console.log('Path found:', res);
                     if (res?.planConnection?.edges) {
-                    // Emit up directly to our tracking element parent hook
-                    this.routesCalculated.emit(res.planConnection.edges);
+                        // Emit up directly to our tracking element parent hook
+                        this.routesCalculated.emit(res.planConnection.edges);
                     }
                 },
                 error: (err) => console.error('Error calculating path', err)
@@ -109,6 +115,10 @@ export class Path implements OnInit{
         }
     }
 
+    /**
+     * This method "listen" to evry mark location change and update the form
+     * @param data Coordinates of start and arrive
+     */
     public updateFormFromMap(data: {start?: L.LatLng, arrive?: L.LatLng}) {
         this.form.patchValue({
             startLatitude: data.start?.lat.toFixed(6) || '',
