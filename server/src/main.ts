@@ -5,7 +5,7 @@ import { AppModule } from "./app.module";
 async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
         logger: new ConsoleLogger({
-            json: Boolean(process.env["JSON_LOGS"]) ?? false,
+            json: process.env["JSON_LOGS"] === "true",
             logLevels: ['log']
         }),
     });
