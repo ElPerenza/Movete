@@ -45,9 +45,9 @@
                                     <span class="font-bold text-green-500 text-sm ml-2">
                                         In orario
                                     </span>
-                                } @else if (time.departureDelay > 0) {
+                                } @else if (time.departureDelay < 0) {
                                     <span class="font-bold text-purple-500 text-sm ml-2">
-                                        -{{ time.departureDelay / 60 }} min
+                                        {{ time.departureDelay / 60 }} min
                                     </span>
                                 } @else {
                                     <span class="font-bold text-red-500 text-sm ml-2">
