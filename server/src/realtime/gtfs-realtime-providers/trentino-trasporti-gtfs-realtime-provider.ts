@@ -67,6 +67,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
      * @returns the arrival and departure times of trips running today
      */
     private async getTripsRunningToday(): Promise<TripDepartureArrivalTimes[]> {
+        const start = Date.now();
 
         if(!this.tripDates) {
             this.tripDates = await this.realtimeService.getTripsDatesByFeed(this.feedId);
@@ -74,9 +75,12 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
 
         const todayDate = this.realtimeService.formatAsYYYYMMDDD(new Date()); // TODO: timezones? as long as server is running in Europe/Rome timezone it's fine
         const tripsRunning = this.tripDates.filter(td => td.activeDates.includes(todayDate));
-        return await Promise.all(tripsRunning.map(async td => {
+        const tripTimes = await Promise.all(tripsRunning.map(async td => {
             return await this.realtimeService.getTripDepartureArrivalTimes(td.tripId, todayDate);
         }));
+
+        this.logger.log(`[${this.feedId}] Retrieved today's trips departure/arrival times in ${Date.now() - start}ms. ${tripTimes.length} trips total.`);
+        return tripTimes;
     }
 
     /**
@@ -97,7 +101,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
         const trips = new Set(tripsCurrentlyRunning).union(this.trackedTrips);
         this.feed = await this.createTripUpdatesFeed(trips);
 
-        this.logger.log(`[${this.feedId}] Created feed in ${Date.now() - start}ms. Made ${tripsCurrentlyRunning.length} requests to the TT API.`)
+        this.logger.log(`[${this.feedId}] Created feed in ${Date.now() - start}ms. Made ${tripsCurrentlyRunning.length} requests to the TT API.`);
     }
 
     /**
