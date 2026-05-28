@@ -2,7 +2,7 @@ import { AfterViewInit, Component, ChangeDetectorRef, ViewChild } from "@angular
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { CommonModule, DatePipe, DecimalPipe } from "@angular/common";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
-import { RouterLink } from "@angular/router";
+import { RouterLink, RouterOutlet } from "@angular/router";
 import * as L from 'leaflet';
 import * as polyline from '@mapbox/polyline';
 import { Stop } from "../class/stop";
@@ -14,7 +14,7 @@ import { environment } from "../../environments/environment";
 
 @Component({
     selector: "app-map",
-    imports: [ReactiveFormsModule, FormsModule, Path, Timetable, RouterLink],
+    imports: [ReactiveFormsModule, FormsModule, Path, Timetable, RouterLink, RouterOutlet],
     templateUrl: "./map.html",
     styleUrl: "./map.css"
 })
