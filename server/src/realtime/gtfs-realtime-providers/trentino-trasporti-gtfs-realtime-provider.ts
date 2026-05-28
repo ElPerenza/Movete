@@ -16,6 +16,9 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
 
     private readonly logger = new Logger(TrentinoTrasportiGtfsRealtimeProvider.name);
 
+    /** "Padding" (in seconds) to add to the departure and arrival of a trip when checking if the trip should be currently running. */
+    private readonly TRIP_SELECTION_PADDING = 600;
+
     // TODO: A lot of shared state between methods in this class. It works and isn't terribly complex, but I'd like a cleaner way of doing things in the future
     private tripDates?: TripDates[]; // these are all trips in the feed that this provider must consider. They don't change after initialization. Should they be passed in the constructor?
     private runningToday?: TripDepartureArrivalTimes[];
@@ -44,7 +47,8 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
         this.schedulerRegistry.addCronJob(`${feedId}-update-trips-running-today`, job);
         job.start();
 
-        // arrow function to make sure it's called with the correct "this" reference (https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval#functions_are_called_with_the_global_this)
+        // arrow function to make sure it's called with the correct "this" reference 
+        // (https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval#functions_are_called_with_the_global_this)
         const interval = setInterval(async () => {
             try {
                 await this.updateFeed();
@@ -73,7 +77,8 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
             this.tripDates = await this.realtimeService.getTripsDatesByFeed(this.feedId);
         }
 
-        const todayDate = this.realtimeService.formatAsYYYYMMDDD(new Date()); // TODO: timezones? as long as server is running in Europe/Rome timezone it's fine
+        // TODO: timezones? as long as server is running in Europe/Rome timezone it's fine
+        const todayDate = this.realtimeService.formatAsYYYYMMDDD(new Date());
         const tripsRunning = this.tripDates.filter(td => td.activeDates.includes(todayDate));
         const tripTimes = await Promise.all(tripsRunning.map(async td => {
             return await this.realtimeService.getTripDepartureArrivalTimes(td.tripId, todayDate);
@@ -95,7 +100,11 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
 
         const now = Math.floor(Date.now() / 1000);
         const tripsCurrentlyRunning = this.runningToday
-            .filter(times => now >= times.departureTime && now <= times.arrivalTime) // TODO: consider if extending the bounds for inclusion a few minutes before and after "now"
+            .filter(times => {
+                // consider only trips that should be currently running (with some padding)
+                return now >= (times.departureTime - this.TRIP_SELECTION_PADDING) && 
+                        now <= (times.arrivalTime + this.TRIP_SELECTION_PADDING);
+            })
             .map(times => times.tripId.substring(times.tripId.indexOf(":") + 1)); // remove feedId (OTP gtfs IDs -> feedId:tripId)
         
         const trips = new Set(tripsCurrentlyRunning).union(this.trackedTrips);
@@ -122,7 +131,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
     /**
      * Create a trip updates realtime feed for the given trips.
      * Trip updates are always for the current day, as the TT API does not support searching for trips on days different than the current one.
-     * @param trips the trips to include in the feed
+     * @param trips the trips to include in the feed (IDs)
      * @returns the already encoded feed
      */
     private async createTripUpdatesFeed(trips: Iterable<string>): Promise<Uint8Array> {
@@ -158,7 +167,8 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
                     stopTimeUpdate: [
                         {
                             // TODO:
-                            // stopLast and stopNext aren't always 100% reliable, investigate using lastSequenceDetection
+                            // stopLast and stopNext aren't always 100% reliable, investigate using lastSequenceDetection.
+                            // However it seems that sometimes things just break in the TT API, so might not be worth it.
                             stopId: tripInfo.stopNext.toString(),
                             departure: {
                                 delay: tripInfo.delay! * 60
