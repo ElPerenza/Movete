@@ -23,19 +23,43 @@
                 @for (time of currentStopTimes; track time.tripId) {
 
                     <!-- Key data displayed per departure -->
-                    <div (click)="openTripDetails(time)"
-                         class="flex items-center justify-between p-2 bg-gray-50 hover:bg-blue-100 rounded border border-gray-100 transition-colors cursor-pointer">
-                        <div class="flex items-center gap-2 overflow-hidden">
-                            <span class="bg-blue-600 text-white text-xs font-bold w-7 h-7 flex items-center justify-center rounded-md shrink-0 shadow-sm">
-                                {{ time.routeShortName || '-' }}
-                            </span>
-                            <span class="font-medium text-gray-800 truncate text-xs">
-                                {{ time.headsign || 'Sconosciuta' }}
+                    <div (click)="openTripDetails(time)" class="flex flex-col p-2 bg-gray-50 hover:bg-blue-100 rounded border border-gray-100 transition-colors cursor-pointer">
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <span class="bg-blue-600 text-white text-xs font-bold w-7 h-7 flex items-center justify-center rounded-md shrink-0 shadow-sm">
+                                    {{ time.routeShortName || '-' }}
+                                </span>
+                                <span class="font-medium text-gray-800 truncate text-xs">
+                                    {{ time.headsign || 'Sconosciuta' }}
+                                </span>
+                            </div>
+                            <span class="font-bold text-gray-900 text-sm ml-2">
+                                {{ time.scheduledDeparture | date:'HH:mm' }}
                             </span>
                         </div>
-                        <span class="font-bold text-gray-900 text-sm ml-2">
-                            {{ time.scheduledDeparture | date:'HH:mm' }}
-                        </span>
+
+                        <div class="flex justify-end">
+                            @if (time.realtime) {
+                                @if (time.departureDelay === 0) {
+                                    <span class="font-bold text-green-500 text-sm ml-2">
+                                        In orario
+                                    </span>
+                                } @else if (time.departureDelay > 0) {
+                                    <span class="font-bold text-purple-500 text-sm ml-2">
+                                        -{{ time.departureDelay / 60 }} min
+                                    </span>
+                                } @else {
+                                    <span class="font-bold text-red-500 text-sm ml-2">
+                                        +{{ time.departureDelay / 60 }} min
+                                    </span>
+                                }
+                            } @else {
+                                <span class="font-light text-gray-400 text-sm ml-2">
+                                    Nessun dato in tempo reale
+                                </span>
+                            }
+                        </div>
                     </div>
                 }
             </div>
