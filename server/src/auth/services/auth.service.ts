@@ -1,47 +1,55 @@
 import { Injectable, ConflictException } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
 import * as bcrypt from "bcrypt";
+import { User, UserDocument } from "../../users/models/user.schema"
 
-//dummy user for test purposes:
-const mockUser = [
-    { _id: "123", email: "user@example.com", password: "password123" }
-];
 
 @Injectable()
 export class AuthService {
+    //Mongoose model Injection:
+    constructor(
+        @InjectModel(User.name) private userModel: Model<UserDocument>
+    ) { }
     async register(email: string, pass: string): Promise<any> {
-        const existingUser = mockUser.find(u => u.email === email);
+        // 1. Check if email already exists in the real database
+        const existingUser = await this.userModel.findOne({ email }).exec();
         if (existingUser) {
             throw new ConflictException("Email già in uso");
         }
 
+        //Hash the password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(pass, saltRounds);
 
-        const newUser = {
-            _id: Math.random().toString(36).substring(7),
+        //save new user to MongoDB
+        const newUser = new this.userModel({
             email: email,
             password: hashedPassword
-        };
-        mockUser.push(newUser);
+        });
 
-        const { password, ...result } = newUser;
-        return result;
+        const savedUser = await newUser.save();
+
+        //return user data without the password
+        const { password, ...userObj } = savedUser.toObject();
+
+        return userObj;
     }
+
     async validateUser(email: string, pass: string): Promise<any> {
-        const user = mockUser.find(u => u.email === email);
+        //find user in the database
+        const user = await this.userModel.findOne({ email }).exec();
 
         if (user) {
-            const isMatch = user.password === "password123"
-                ? pass === user.password
-                : await bcrypt.compare(pass, user.password);
+            //compare hashed password
+            const isMatch = await bcrypt.compare(pass, user.password);
 
             if (isMatch) {
-                const { password, ...result } = user;
-                return result;
+                const { password, ...userObj } = user.toObject();
+                return userObj;
             }
         }
         return null;
     }
-
 
 }
