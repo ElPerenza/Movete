@@ -2,12 +2,18 @@ import { Controller, Post, Body, HttpCode, HttpStatus, Req, UnauthorizedExceptio
 import type { Request } from "express";
 import { AuthService } from "../services/auth.service";
 import { LoginRequestDto } from "../dto/loginRequest.dto";
+import { RegisterRequestDto } from "../dto/registerRequest.dto";
 
 @Controller("auth")
 export class AuthController {
     constructor(private authService: AuthService) { }
 
     @HttpCode(HttpStatus.OK)
+    @Post("register")
+    async register(@Body() registerDto: RegisterRequestDto) {
+        const user = await this.authService.register(registerDto.email, registerDto.password);
+        return { message: "Registrazione completata con successo", user };
+    }
     @Post("login")
     async login(@Body() loginDto: LoginRequestDto, @Req() request: Request) {
         const user = await this.authService.validateUser(loginDto.email, loginDto.password);
