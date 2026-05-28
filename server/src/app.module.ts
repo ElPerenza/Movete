@@ -5,6 +5,7 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { PoiModule } from "./poi/poi.module";
 import { PathModule } from './path/path.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
     imports: [
@@ -23,6 +24,7 @@ import { PathModule } from './path/path.module';
         }),
         PoiModule,
         PathModule,
+        AuthModule,
     ],
     controllers: [AppController],
     providers: [AppService]
