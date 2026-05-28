@@ -6,19 +6,37 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
-    
-    <title>Document</title>
+    <title>Movete</title>
 </head>
 <body>
     <div class="flex flex-col h-screen w-full overflow-hidden">
+        
+        <nav class="w-full bg-blue-600 text-white h-14 flex items-center justify-between px-4 z-[2000] shadow-md shrink-0 relative">
+            <div class="flex items-center gap-4">
+                <button (click)="toggleSidebar()" class="p-2 hover:bg-blue-700 rounded-md transition-colors" title="Mostra/Nascondi Fermate">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                
+                <div class="text-xl font-bold tracking-wider flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A2 2 0 013 15.487V6a2 2 0 011.106-1.789l5.447-2.724a2 2 0 011.894 0l5.447 2.724A2 2 0 0118 6v9.487a2 2 0 01-1.106 1.789L11.447 20a2 2 0 01-1.894 0z"></path></svg>
+                    Movete
+                </div>
+            </div>
+            
+            <div class="flex items-center">
+                <a routerLink="/login" class="bg-white text-blue-600 font-bold px-4 py-1.5 rounded text-sm hover:bg-blue-50 transition-colors shadow-sm">
+                    Accedi
+                </a>
+            </div>
+        </nav>
 
         @if (showPathForm) {
             <div class="w-full bg-white border-b border-gray-200 flex flex-col lg:flex-row min-h-[5rem] items-center z-[1001] shadow-sm py-2 lg:py-0">
-            
                 <div class="w-full lg:w-[30%] px-4 py-2 lg:py-0 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-gray-100">
-                    <div class="flex items-center gap-2 border-r border-gray-100 pr-4 h-8  sm:flex w-full">
+                    <div class="flex items-center gap-2 border-r border-gray-100 pr-4 h-8 sm:flex w-full">
                         <h2 class="text-sm lg:text-lg font-bold text-gray-800 leading-tight">Risultati Ricerca</h2>
-                        
                         <button (click)="closeForm()" class="text-gray-400 hover:text-blue-600 ml-auto">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -36,10 +54,9 @@
             </div>
         }
 
-        <div class="flex flex-1 overflow-hidden">
+        <div class="flex flex-1 overflow-hidden relative">
             
-            <div class="w-[30%] h-full bg-white shadow-xl z-20 overflow-y-auto flex flex-col border-r border-gray-100">
-                
+            <div [class.hidden]="!showSidebar" class="w-full md:w-[30%] min-w-[320px] h-full bg-white shadow-xl z-20 overflow-y-auto flex flex-col border-r border-gray-100 absolute md:relative">
                 <div class="p-6">
                     @if (!showPathForm) {
                         <div class="flex items-center justify-between border-b pb-4 mb-4 text-gray-800">
@@ -209,7 +226,7 @@
                 </div>
             </div>
 
-            <div class="w-[70%] h-full relative z-10">
+            <div class="flex-1 h-full relative z-10">
                 <div id="map" class="w-full h-full"></div>
             </div>
         </div>
