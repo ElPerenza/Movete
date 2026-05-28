@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ChangeDetectorRef, ViewChild } from "@angular/core";
+import { AfterViewInit, Component, ChangeDetectorRef, ViewChild, OnInit } from "@angular/core";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { CommonModule, DatePipe, DecimalPipe } from "@angular/common";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
@@ -12,13 +12,15 @@ import { StopTime } from "../class/stop-time"
 import { Timetable } from "../timetable/timetable";
 import { environment } from "../../environments/environment";
 
+import { AuthService } from "../auth/services/auth.service";
+
 @Component({
     selector: "app-map",
     imports: [ReactiveFormsModule, FormsModule, Path, Timetable, RouterLink, RouterOutlet],
     templateUrl: "./map.html",
     styleUrl: "./map.css"
 })
-export class Map implements AfterViewInit {
+export class Map implements AfterViewInit, OnInit {
     private map!: L.Map;
     private stopsLayerMarkerGroup: L.LayerGroup = L.layerGroup();
     private _pathComponent!: Path;
@@ -61,10 +63,10 @@ export class Map implements AfterViewInit {
         { label: 'Cable Car', value: 'CABLE_CAR', checked: false }
     ];
     public useBbox: boolean = true;
-
+    public isLoggedIn: boolean = false;
 
     //TODO verify if cdr have some impact on performance but is the only thing that make the navbar working dynamically
-    constructor(private http: HttpClient, private cdr: ChangeDetectorRef) { }
+    constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private authService: AuthService) { }
 
     public toggleSidebar(): void {
         this.showSidebar = !this.showSidebar;
@@ -82,6 +84,13 @@ export class Map implements AfterViewInit {
 
     ngAfterViewInit(): void {
         this.initMap();
+    }
+
+    ngOnInit() {
+        this.authService.isLoggedIn$.subscribe(state => {
+            this.isLoggedIn = state;
+            this.cdr.detectChanges();
+        });
     }
 
     /**
