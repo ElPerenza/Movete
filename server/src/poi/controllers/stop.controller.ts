@@ -83,6 +83,6 @@ export class StopController {
         if (!tripId) {
             throw new HttpException('Trip ID mancante', HttpStatus.BAD_REQUEST);
         }
-        return this.otpService.getTripDetails(tripId);
+        return this.otpService.getTripDetails(tripId, this.otpService.formatAsYYYYMMDDD(new Date())); // TODO: shouldn't default to today's date
     }
 }

@@ -1,7 +1,8 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { StopTime } from '../models/stop-time.model';
-import { ConfigService } from '@nestjs/config'
+import { ConfigService } from '@nestjs/config';
 
+// TODO: merge this and OTPService
 
 /**
  * Service responsible for interacting with the local OTP2 GraphQL APIs.
@@ -24,6 +25,26 @@ export class OtpService {
 
     constructor(configService: ConfigService) {
         this.OTP_GRAPHQL_URL = configService.getOrThrow("OTP_GRAPHQL_URL");
+    }
+
+    /**
+     * Format a {@link Date} object as a YYYYMMDD string based on the system's timezone.
+     * @param date the date to format
+     * @returns the formatted date
+     */
+    formatAsYYYYMMDDD(date: Date): string {
+        let dateString = date.getFullYear().toString();
+        if(date.getMonth() + 1 >= 10) {
+            dateString += (date.getMonth() + 1).toString();
+        } else {
+            dateString += `0${date.getMonth() + 1}`;
+        }
+        if(date.getDate() >= 10) {
+            dateString += date.getDate().toString();
+        } else {
+            dateString += `0${date.getDate()}`;
+        }
+        return dateString;
     }
 
     // Accepts an array of strings to handle multiple GTFS IDs for a single logical stop
@@ -131,11 +152,11 @@ export class OtpService {
         }
     }
 
-    async getTripDetails(tripId: string): Promise<any[]> {
+    async getTripDetails(tripId: string, serviceDate: string): Promise<any[]> {
         const query = `
-            query GetTripDetails($tripId: String!) {
+            query GetTripDetails($tripId: String!, $serviceDate: String!) {
                 trip(id: $tripId) {
-                    stoptimes {
+                    stoptimesForDate(serviceDate: $serviceDate) {
                         stop {
                             name
                         }
@@ -153,7 +174,7 @@ export class OtpService {
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({
                     query,
-                    variables: { tripId },
+                    variables: { tripId, serviceDate },
                 }),
             });
 
@@ -168,7 +189,7 @@ export class OtpService {
             midnight.setHours(0, 0, 0, 0);
             const midnightSeconds = Math.floor(midnight.getTime() / 1000);
 
-            return data.trip.stoptimes.map((st: any) => {
+            return data.trip.stoptimesForDate.map((st: any) => {
                 const arrivalDate = new Date((midnightSeconds + st.scheduledArrival) * 1000);
 
                 return {
