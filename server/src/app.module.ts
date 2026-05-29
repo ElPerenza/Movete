@@ -4,8 +4,12 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { PoiModule } from "./poi/poi.module";
+<<<<<<< realtime
 import { RealtimeModule } from './realtime/realtime.module';
 import { ScheduleModule } from "@nestjs/schedule";
+=======
+import { PathModule } from './path/path.module';
+>>>>>>> develop
 
 @Module({
     imports: [
@@ -24,7 +28,11 @@ import { ScheduleModule } from "@nestjs/schedule";
             }
         }),
         PoiModule,
+<<<<<<< realtime
         RealtimeModule
+=======
+        PathModule,
+>>>>>>> develop
     ],
     controllers: [AppController],
     providers: [AppService]

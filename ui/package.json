@@ -19,6 +19,9 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@mapbox/polyline": "^1.2.1",
+    "@types/leaflet": "^1.9.21",
+    "polyline": "^0.2.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

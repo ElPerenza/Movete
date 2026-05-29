@@ -205,4 +205,48 @@ export class OtpService {
             throw new HttpException('Internal error while retrieving trip data', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    /**
+     * Get all stops from OpenTripPlanner scheduled data.
+     * @returns all stops
+     */
+    async getAllStops(): Promise<{
+        gtfsId: string
+        name: string
+        lat: number
+        lon: number
+        vehicleMode: "BUS" | "RAIL" | "CABLE_CAR"
+    }[]> {
+        const query = `
+            query GetAllStops {
+                stops {
+                    gtfsId
+                    name
+                    lat
+                    lon
+                    vehicleMode
+                }
+            }
+        `;
+
+        try {
+            const response = await fetch(this.OTP_GRAPHQL_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ query }),
+            });
+
+            const { data, errors } = await response.json();
+
+            if (errors || !data?.stops) {
+                return [];
+            }
+
+            return data.stops;
+
+        } catch (error) {
+            console.error("Failed to retrieve trip details:", error);
+            throw new HttpException('Internal error while retrieving trip data', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
