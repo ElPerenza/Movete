@@ -1,7 +1,7 @@
 import { Logger } from "@nestjs/common";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
-import { TripDates, TripDepartureArrivalTimes } from "../types/otp-types";
+import { TripDates, TripServiceDateInformation } from "../types/otp-types";
 import { OtpRealtimeService } from "../services/otp-realtime.service";
 import { FeedEntitySchema, FeedHeader_Incrementality, FeedMessageSchema } from "../../generated/gtfs-realtime_pb";
 import { create, toBinary } from "@bufbuild/protobuf";
@@ -21,7 +21,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
 
     // TODO: A lot of shared state between methods in this class. It works and isn't terribly complex, but I'd like a cleaner way of doing things in the future
     private tripDates?: TripDates[]; // these are all trips in the feed that this provider must consider. They don't change after initialization. Should they be passed in the constructor?
-    private runningToday?: TripDepartureArrivalTimes[];
+    private runningToday?: TripServiceDateInformation[];
     private readonly trackedTrips: Set<string> = new Set();
     private feed?: Uint8Array;
 
@@ -70,7 +70,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
      * Retrieve the arrival and departure times of trips running on the current date.
      * @returns the arrival and departure times of trips running today
      */
-    private async getTripsRunningToday(): Promise<TripDepartureArrivalTimes[]> {
+    private async getTripsRunningToday(): Promise<TripServiceDateInformation[]> {
         const start = Date.now();
 
         if(!this.tripDates) {
@@ -81,7 +81,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
         const todayDate = this.realtimeService.formatAsYYYYMMDDD(new Date());
         const tripsRunning = this.tripDates.filter(td => td.activeDates.includes(todayDate));
         const tripTimes = await Promise.all(tripsRunning.map(async td => {
-            return await this.realtimeService.getTripDepartureArrivalTimes(td.tripId, todayDate);
+            return await this.realtimeService.getTripInfoForServiceDate(td.tripId, todayDate);
         }));
 
         this.logger.log(`[${this.feedId}] Retrieved today's trips departure/arrival times in ${Date.now() - start}ms. ${tripTimes.length} trips total.`);
@@ -100,17 +100,17 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
 
         const now = Math.floor(Date.now() / 1000);
         const tripsCurrentlyRunning = this.runningToday
-            .filter(times => {
+            .filter(tripInfo => {
                 // consider only trips that should be currently running (with some padding)
-                return now >= (times.departureTime - this.TRIP_SELECTION_PADDING) && 
-                        now <= (times.arrivalTime + this.TRIP_SELECTION_PADDING);
+                return now >= (tripInfo.departureTime - this.TRIP_SELECTION_PADDING) && 
+                        now <= (tripInfo.arrivalTime + this.TRIP_SELECTION_PADDING);
             })
-            .map(times => times.tripId.substring(times.tripId.indexOf(":") + 1)); // remove feedId (OTP gtfs IDs -> feedId:tripId)
+            .map(tripInfo => tripInfo.tripId.substring(tripInfo.tripId.indexOf(":") + 1)); // remove feedId (OTP gtfs IDs -> feedId:tripId)
         
         const trips = new Set(tripsCurrentlyRunning).union(this.trackedTrips);
         this.feed = await this.createTripUpdatesFeed(trips);
 
-        this.logger.log(`[${this.feedId}] Created feed in ${Date.now() - start}ms. Made ${tripsCurrentlyRunning.length} requests to the TT API.`);
+        this.logger.log(`[${this.feedId}] Created feed in ${Date.now() - start}ms. Made ${trips.size} requests to the TT API.`);
     }
 
     /**
@@ -146,12 +146,15 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
         const todayDate = this.realtimeService.formatAsYYYYMMDDD(new Date());
 
         for(const tripId of trips) {
-            const tripInfo = await this.ttApiService.getTripInfo(tripId);
-            if(tripInfo.delay == null || tripInfo.stopLast == tripInfo.stopNext) {
+
+            const realtimeInfo = await this.ttApiService.getTripInfo(tripId);
+            if(realtimeInfo.delay == null || realtimeInfo.lastSequenceDetection === realtimeInfo.stopTimes.length) {
                 // no realtime data (either lost signal or trip completed)
                 this.trackedTrips.delete(tripId);
                 continue;
             }
+
+            const serviceDateInfo = this.runningToday!.find(times => times.tripId.endsWith(tripId))!;
 
             // keep track of trips that have realtime info, so we don't stop considering them if they're late and go out of the window defined in updateFeed()
             this.trackedTrips.add(tripId);
@@ -159,19 +162,16 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
             realtimeFeed.entity.push(create(FeedEntitySchema, {
                 id: tripId,
                 tripUpdate: {
-                    timestamp: BigInt(Math.floor(Date.parse(tripInfo.lastEventRecivedAt) / 1000)),
+                    timestamp: BigInt(Math.floor(Date.parse(realtimeInfo.lastEventRecivedAt) / 1000)),
                     trip: {
                         tripId: tripId,
                         startDate: todayDate
                     },
                     stopTimeUpdate: [
                         {
-                            // TODO:
-                            // stopLast and stopNext aren't always 100% reliable, investigate using lastSequenceDetection.
-                            // However it seems that sometimes things just break in the TT API, so might not be worth it.
-                            stopId: tripInfo.stopNext.toString(),
+                            stopSequence: serviceDateInfo.sequenceNumbers[realtimeInfo.lastSequenceDetection],
                             departure: {
-                                delay: tripInfo.delay! * 60
+                                delay: realtimeInfo.delay! * 60
                             }
                         }
                     ]

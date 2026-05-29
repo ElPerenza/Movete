@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLClientService } from '../../graphql-client/services/graphql-client.service';
-import { TripDates, TripDepartureArrivalTimes } from '../types/otp-types';
+import { TripDates, TripServiceDateInformation } from '../types/otp-types';
+
+// TODO: merge this and OtpService
 
 /**
  * A service providing access to OpenTripPlanner data needed by the GTFS Realtime providers.
@@ -57,12 +59,13 @@ export class OtpRealtimeService {
     }
 
     /**
-     * Retrieve a trip's departure and arrival times (origin/destination, not single stop) for a specific service date.
+     * Retrieve a trip's departure and arrival times and stop sequence numbers for a specific service date.
      * @param tripId id of the trip
      * @param serviceDate date for which to get times, in YYYYMMDD format
      * @returns the trip's departure and arrival times
      */
-    async getTripDepartureArrivalTimes(tripId: string, serviceDate: string): Promise<TripDepartureArrivalTimes> {
+    async getTripInfoForServiceDate(tripId: string, serviceDate: string): Promise<TripServiceDateInformation> {
+        
         const query = `
             query TripDepartureArrivalTimes($tripId: String!, $serviceDate: String!) {
                 trip(id: $tripId) {
@@ -71,8 +74,10 @@ export class OtpRealtimeService {
                         scheduledDeparture
                     }
                     arrivalStoptime(serviceDate: $serviceDate) {
-                        serviceDay
                         scheduledArrival
+                    }
+                    stoptimesForDate(serviceDate: $serviceDate) {
+                        stopPosition
                     }
                 }
             }
@@ -84,16 +89,21 @@ export class OtpRealtimeService {
                     scheduledDeparture: number
                 }
                 arrivalStoptime: {
-                    serviceDay: number
                     scheduledArrival: number
                 }
+                stoptimesForDate: {
+                    stopPosition: number
+                }[]
             }
         }>(this.OTP_GRAPHQL_URL, query, { tripId: tripId, serviceDate: serviceDate });
+
+        const serviceDay = tripTimes.departureStoptime.serviceDay;
         return {
             tripId,
             serviceDate,
-            departureTime: tripTimes.departureStoptime.serviceDay + tripTimes.departureStoptime.scheduledDeparture,
-            arrivalTime: tripTimes.arrivalStoptime.serviceDay + tripTimes.arrivalStoptime.scheduledArrival
-        }
+            departureTime: serviceDay + tripTimes.departureStoptime.scheduledDeparture,
+            arrivalTime: serviceDay + tripTimes.arrivalStoptime.scheduledArrival,
+            sequenceNumbers: tripTimes.stoptimesForDate.map(st => st.stopPosition)
+        };
     }
 }

@@ -7,14 +7,17 @@ export interface TripDates {
 }
 
 /**
- * A OTP trip ID with its origin departure and destination arrival times for a service date.
+ * Essential OTP trip information for a specific service date.
  */
-export interface TripDepartureArrivalTimes {
+export interface TripServiceDateInformation {
+    /** OTP trip ID. */
     tripId: string
-    /** Service date in YYYYMMDD format. */
+    /** Active service date in YYYYMMDD format. */
     serviceDate: string
-    /** Departure time in seconds since UNIX epoch. */
+    /** Scheduled departure time in seconds since UNIX epoch. */
     departureTime: number
-    /** Arrival time in seconds since UNIX epoch. */
+    /** Scheduled arrival time in seconds since UNIX epoch. */
     arrivalTime: number
+    /** List of GTFS `stop_sequence` numbers for the trip's stops, in order. */
+    sequenceNumbers: number[]
 }
