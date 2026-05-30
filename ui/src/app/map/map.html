@@ -1,221 +1,214 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
+<div class="flex flex-col h-screen w-full overflow-hidden">
     
-    <title>Document</title>
-</head>
-<body>
-    <div class="flex flex-col h-screen w-full overflow-hidden">
-
-        @if (showPathForm) {
-            <div class="w-full bg-white border-b border-gray-200 flex flex-col lg:flex-row min-h-[5rem] items-center z-[1001] shadow-sm py-2 lg:py-0">
-            
-                <div class="w-full lg:w-[30%] px-4 py-2 lg:py-0 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-gray-100">
-                    <div class="flex items-center gap-2 border-r border-gray-100 pr-4 h-8  sm:flex w-full">
-                        <h2 class="text-sm lg:text-lg font-bold text-gray-800 leading-tight">Risultati Ricerca</h2>
-                        
-                        <button (click)="closeForm()" class="text-gray-400 hover:text-blue-600 ml-auto">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                        <span class="text-xs font-bold text-gray-800 whitespace-nowrap">Fermate</span>
-                    </div>
-                </div>
-
-                <div class="w-full lg:w-[70%] px-4 flex flex-col sm:flex-row items-center gap-4">
-                    <div class="w-full flex-1">
-                        <app-path></app-path>
-                    </div>
-                </div>
-            </div>
-        }
-
-        <div class="flex flex-1 overflow-hidden">
-            
-            <div class="w-[30%] h-full bg-white shadow-xl z-20 overflow-y-auto flex flex-col border-r border-gray-100">
+    <nav class="w-full bg-blue-600 text-white h-14 flex items-center justify-between px-4 z-[2000] shadow-md shrink-0 relative">
+        <div class="flex-shrink-0 z-10">
+            <button (click)="toggleSidebar()" class="p-2 hover:bg-blue-700 rounded-md transition-colors" title="Mostra/Nascondi Fermate">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
+        
+        <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center pointer-events-none">
+            <img src="/logo.svg" alt="Movete Logo"  class="h-10 w-auto drop-shadow-[0_2px_8px_rgba(255,255,255,0.8)] hover:scale-105 transition-transform">
+        </div>
+        <div class="flex-shrink-0 z-10">
                 
-                <div class="p-6">
-                    @if (!showPathForm) {
-                        <div class="flex items-center justify-between border-b pb-4 mb-4 text-gray-800">
-                            <h2 class="text-xl font-bold">Fermate trovate</h2>
-                            <button (click)="togglePathForm()" 
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm">
-                                Cerca percorsi
-                            </button>
-                        </div>
-
-                        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Filtri Trasporto</p>
-                            <div class="space-y-2">
-                                @for (filter of transportFilters; track filter.value) {
-                                    <label class="flex items-center space-x-3 cursor-pointer group">
-                                        <input type="checkbox" [(ngModel)]="filter.checked" (change)="onFilterChange()" class="w-4 h-4 text-blue-600 rounded">
-                                        <span class="text-gray-700 group-hover:text-blue-600">{{ filter.label }}</span>
-                                    </label>
-                                }
-                                <hr class="my-3 border-gray-200">
-                                <label class="flex items-center space-x-3 cursor-pointer group">
-                                    <input type="checkbox" [(ngModel)]="useBbox" (change)="onFilterChange()" class="w-4 h-4 text-green-600 rounded">
-                                    <span class="text-sm font-medium text-gray-700">Filtra per area visibile</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <ul class="space-y-2">
-                            @for (stop of currentStops; track stop.id) {
-                                <li (click)="selectStop(stop)" [id]="'stop-card-' + stop.id"
-                                    class="p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
-                                    <div class="font-medium text-gray-800">{{ stop.name }}</div>
-                                    
-                                    @if (selectedStopId === stop.id) {
-                                        <div class="mt-2 text-sm text-gray-600 bg-white p-3 rounded border-l-4 border-blue-500 shadow-sm">
-                                            <app-timetable [stop]="stop"></app-timetable>
-                                        </div>
-                                    }
-                                </li>
-                            } @empty {
-                                <li class="text-center text-gray-500 mt-10">Nessuna fermata trovata.</li>
-                            }
-                        </ul>
-                    } @else {
-                        <div class="flex items-center justify-between w-full mb-3">
-                            <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Percorsi Disponibili</span>
-                            
-                            <button (click)="resetSearch()" 
-                                    class="text-[11px] font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2 py-1 rounded">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
-                                Resetta
-                            </button>
-                        </div>
+                @if (!isLoggedIn) {
+                    <a routerLink="/login" class="bg-white text-blue-600 font-bold px-4 py-1.5 rounded text-sm hover:bg-blue-50 transition-colors shadow-sm">
+                        Accedi
+                    </a>
+                } @else {
+                    <button class="hover:scale-110 transition-all flex items-center justify-center p-1" title="Profilo Utente">
                         
-                        @if (calculatedRoutes.length > 0) {
-                            
-                            @for (route of calculatedRoutes; track $index) {
-                            <div class="mb-3 border rounded-xl overflow-hidden bg-white shadow-sm transition-all"
-                                [class.border-blue-500]="activeItineraryIndex === $index"
-                                [class.ring-2]="activeItineraryIndex === $index"
-                                [class.ring-blue-100]="activeItineraryIndex === $index">
-                                
-                                <div class="p-4 cursor-pointer hover:bg-gray-50 transition-colors" (click)="selectItinerary($index)">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <span class="font-bold text-gray-700 text-base">
-                                        {{ formatTime(route.node.startTime) }} - {{ formatTime(route.node.endTime) }}
-                                        </span>
-                                        <span class="bg-blue-50 text-blue-600 font-semibold text-xs px-2.5 py-1 rounded-full">
-                                        {{ Math.round(route.node.duration / 60) }} min
-                                        </span>
-                                    </div>
+                        <img src="/user.svg" alt="Utente" class="w-8 h-8 drop-shadow-md">
+                        
+                    </button>
+                }
 
-                                    <div class="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 mt-3">
-                                        @for (leg of route.node.legs; track $index) {
-                                        <div class="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
-                                            @if (leg.mode === 'WALK') { 🚶‍♂️ }
-                                            @else if (leg.mode === 'BUS') { 🚌 {{ leg.route?.shortName }} }
-                                            @else if (leg.mode === 'RAIL') { 🚆 {{ leg.route?.shortName }} }
-                                            @else { 🗺️ }
-                                        </div>
-                                        @if (!$last) {
-                                            <span class="text-gray-300 font-bold text-sm">→</span>
-                                        }
-                                        }
-                                    </div>
-                                </div>
+            </div>
+    </nav>
 
-                                @if (activeItineraryIndex === $index) {
-                                <div class="border-t border-gray-100 bg-slate-50 p-4 transition-all">
-                                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Dettaglio Percorso</h4>
-                                    
-                                    <div class="relative border-l-2 border-dashed border-gray-300 ml-3 pl-5 space-y-5">
-                                    @for (leg of route.node.legs; track $index) {
-                                        <div class="relative text-sm">
-                                        
-                                        <span class="absolute -left-[29px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-slate-50"
-                                                [class.bg-blue-500]="leg.mode === 'WALK'"
-                                                [class.bg-amber-500]="leg.mode === 'BUS'"
-                                                [class.bg-red-500]="leg.mode === 'RAIL'">
-                                        </span>
-
-                                        <div class="flex justify-between items-start">
-                                            <div>
-                                            <p class="font-bold text-gray-800">
-                                                @if (leg.mode === 'WALK') {
-                                                Cammina fino a <span class="text-gray-600 font-medium">{{ leg.to.name }}</span>
-                                                } @else if (leg.mode === 'BUS') {
-                                                Prendi Bus <span class="bg-sky-500 text-white px-1.5 py-0.5 rounded font-mono text-xs">{{ leg.route?.shortName }}</span> 
-                                                direzione {{ leg.trip?.tripHeadsign || leg.to.name }}
-                                                } @else if (leg.mode === 'RAIL') {
-                                                Prendi Treno <span class="bg-red-600 text-white px-1.5 py-0.5 rounded font-mono text-xs">{{ leg.route?.shortName }}</span> 
-                                                ({{ leg.route?.longName }})
-                                                }
-                                            </p>
-                                            
-                                            @if (leg.mode !== 'WALK') {
-                                                <p class="text-xs text-gray-500 mt-1">
-                                                <strong class="text-gray-600">Da:</strong> {{ leg.from.name }}
-                                                </p>
-                                                <p class="text-xs text-gray-500">
-                                                <strong class="text-gray-600">A:</strong> {{ leg.to.name }}
-                                                </p>
-                                            }
-
-                                            <p class="text-xs text-gray-400 mt-1">
-                                                {{ (leg.distance / 1000).toFixed(2) }} km • {{ getLegDuration(leg.startTime, leg.endTime) }} min
-                                            </p>
-                                            </div>
-
-                                            <span class="text-xs font-mono font-semibold text-gray-500 text-right shrink-0">
-                                            {{ formatTime(leg.startTime) }}
-                                            </span>
-                                        </div>
-
-                                        </div>
-                                    }
-                                    
-                                    <div class="relative text-sm pt-1">
-                                        <span class="absolute -left-[29px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 ring-4 ring-slate-50"></span>
-                                        <div class="flex justify-between">
-                                        <p class="font-bold text-emerald-700">Arrivo a destinazione</p>
-                                        <span class="text-xs font-mono font-semibold text-emerald-600">
-                                            {{ formatTime(route.node.endTime) }}
-                                        </span>
-                                        </div>
-                                    </div>
-
-                                    </div>
-                                </div>
-                                }
-
-                            </div>
-                            }        
-                        } @else {
-                            <div class="flex flex-col items-center justify-center mt-20 text-gray-400 text-center px-4">
-                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                    <svg class="w-8 h-8 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A2 2 0 013 15.487V6a2 2 0 011.106-1.789l5.447-2.724a2 2 0 011.894 0l5.447 2.724A2 2 0 0118 6v9.487a2 2 0 01-1.106 1.789L11.447 20a2 2 0 01-1.894 0z"/>
-                                    </svg>
-                                </div>
-                                <p class="text-sm italic">Definisci i punti sulla mappa e clicca "Calcola" per visualizzare i risultati qui.</p>
-                            </div>
-                        }
-                    }
+    @if (showPathForm) {
+        <div class="w-full bg-white border-b border-gray-200 flex flex-col lg:flex-row min-h-[5rem] items-center z-[1001] shadow-sm py-2 lg:py-0">
+            <div class="w-full lg:w-[30%] px-4 py-2 lg:py-0 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-gray-100">
+                <div class="flex items-center gap-2 border-r border-gray-100 pr-4 h-8 sm:flex w-full">
+                    <h2 class="text-sm lg:text-lg font-bold text-gray-800 leading-tight">Risultati Ricerca</h2>
+                    <button (click)="closeForm()" class="text-gray-400 hover:text-blue-600 ml-auto">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <span class="text-xs font-bold text-gray-800 whitespace-nowrap">Fermate</span>
                 </div>
             </div>
-
-            <div class="w-[70%] h-full relative z-10">
-                <div id="map" class="w-full h-full"></div>
+            <div class="w-full lg:w-[70%] px-4 flex flex-col sm:flex-row items-center gap-4">
+                <div class="w-full flex-1">
+                    <app-path></app-path>
+                </div>
             </div>
         </div>
+    }
+
+    <div class="flex flex-1 overflow-hidden relative">
+        <div [class.hidden]="!showSidebar" class="w-full md:w-[30%] min-w-[320px] h-full bg-white shadow-xl z-20 overflow-y-auto flex flex-col border-r border-gray-100 absolute md:relative">
+            <div class="p-6">
+                @if (!showPathForm) {
+                    <div class="flex items-center justify-between border-b pb-4 mb-4 text-gray-800">
+                        <h2 class="text-xl font-bold">Fermate trovate</h2>
+                        <button (click)="togglePathForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm">
+                            Cerca percorsi
+                        </button>
+                    </div>
+
+                    <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Filtri Trasporto</p>
+                        <div class="space-y-2">
+                            @for (filter of transportFilters; track filter.value) {
+                                <label class="flex items-center space-x-3 cursor-pointer group">
+                                    <input type="checkbox" [(ngModel)]="filter.checked" (change)="onFilterChange()" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="text-gray-700 group-hover:text-blue-600">{{ filter.label }}</span>
+                                </label>
+                            }
+                            <hr class="my-3 border-gray-200">
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" [(ngModel)]="useBbox" (change)="onFilterChange()" class="w-4 h-4 text-green-600 rounded">
+                                <span class="text-sm font-medium text-gray-700">Filtra per area visibile</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <ul class="space-y-2">
+                        @for (stop of currentStops; track stop.id) {
+                            <li (click)="selectStop(stop)" [id]="'stop-card-' + stop.id"
+                                class="p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
+                                <div class="font-medium text-gray-800">{{ stop.name }}</div>
+                                @if (selectedStopId === stop.id) {
+                                    <div class="mt-2 text-sm text-gray-600 bg-white p-3 rounded border-l-4 border-blue-500 shadow-sm">
+                                        <app-timetable [stop]="stop"></app-timetable>
+                                    </div>
+                                }
+                            </li>
+                        } @empty {
+                            <li class="text-center text-gray-500 mt-10">Nessuna fermata trovata.</li>
+                        }
+                    </ul>
+                } @else {
+                    <div class="flex items-center justify-between w-full mb-3">
+                        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Percorsi Disponibili</span>
+                        <button (click)="resetSearch()" class="text-[11px] font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2 py-1 rounded">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                            Resetta
+                        </button>
+                    </div>
+                    
+                    @if (calculatedRoutes.length > 0) {
+                        @for (route of calculatedRoutes; track $index) {
+                        <div class="mb-3 border rounded-xl overflow-hidden bg-white shadow-sm transition-all"
+                            [class.border-blue-500]="activeItineraryIndex === $index"
+                            [class.ring-2]="activeItineraryIndex === $index"
+                            [class.ring-blue-100]="activeItineraryIndex === $index">
+                            
+                            <div class="p-4 cursor-pointer hover:bg-gray-50 transition-colors" (click)="selectItinerary($index)">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-700 text-base">
+                                    {{ formatTime(route.node.startTime) }} - {{ formatTime(route.node.endTime) }}
+                                    </span>
+                                    <span class="bg-blue-50 text-blue-600 font-semibold text-xs px-2.5 py-1 rounded-full">
+                                    {{ Math.round(route.node.duration / 60) }} min
+                                    </span>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 mt-3">
+                                    @for (leg of route.node.legs; track $index) {
+                                    <div class="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+                                        @if (leg.mode === 'WALK') { 🚶‍♂️ }
+                                        @else if (leg.mode === 'BUS') { 🚌 {{ leg.route?.shortName }} }
+                                        @else if (leg.mode === 'RAIL') { 🚆 {{ leg.route?.shortName }} }
+                                        @else { 🗺️ }
+                                    </div>
+                                    @if (!$last) {
+                                        <span class="text-gray-300 font-bold text-sm">→</span>
+                                    }
+                                    }
+                                </div>
+                            </div>
+
+                            @if (activeItineraryIndex === $index) {
+                            <div class="border-t border-gray-100 bg-slate-50 p-4 transition-all">
+                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Dettaglio Percorso</h4>
+                                <div class="relative border-l-2 border-dashed border-gray-300 ml-3 pl-5 space-y-5">
+                                @for (leg of route.node.legs; track $index) {
+                                    <div class="relative text-sm">
+                                    <span class="absolute -left-[29px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-slate-50"
+                                            [class.bg-blue-500]="leg.mode === 'WALK'"
+                                            [class.bg-amber-500]="leg.mode === 'BUS'"
+                                            [class.bg-red-500]="leg.mode === 'RAIL'">
+                                    </span>
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                        <p class="font-bold text-gray-800">
+                                            @if (leg.mode === 'WALK') {
+                                            Cammina fino a <span class="text-gray-600 font-medium">{{ leg.to.name }}</span>
+                                            } @else if (leg.mode === 'BUS') {
+                                            Prendi Bus <span class="bg-sky-500 text-white px-1.5 py-0.5 rounded font-mono text-xs">{{ leg.route?.shortName }}</span> 
+                                            direzione {{ leg.trip?.tripHeadsign || leg.to.name }}
+                                            } @else if (leg.mode === 'RAIL') {
+                                            Prendi Treno <span class="bg-red-600 text-white px-1.5 py-0.5 rounded font-mono text-xs">{{ leg.route?.shortName }}</span> 
+                                            ({{ leg.route?.longName }})
+                                            }
+                                        </p>
+                                        @if (leg.mode !== 'WALK') {
+                                            <p class="text-xs text-gray-500 mt-1">
+                                            <strong class="text-gray-600">Da:</strong> {{ leg.from.name }}
+                                            </p>
+                                            <p class="text-xs text-gray-500">
+                                            <strong class="text-gray-600">A:</strong> {{ leg.to.name }}
+                                            </p>
+                                        }
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            {{ (leg.distance / 1000).toFixed(2) }} km • {{ getLegDuration(leg.startTime, leg.endTime) }} min
+                                        </p>
+                                        </div>
+                                        <span class="text-xs font-mono font-semibold text-gray-500 text-right shrink-0">
+                                        {{ formatTime(leg.startTime) }}
+                                        </span>
+                                    </div>
+                                    </div>
+                                }
+                                <div class="relative text-sm pt-1">
+                                    <span class="absolute -left-[29px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 ring-4 ring-slate-50"></span>
+                                    <div class="flex justify-between">
+                                    <p class="font-bold text-emerald-700">Arrivo a destinazione</p>
+                                    <span class="text-xs font-mono font-semibold text-emerald-600">
+                                        {{ formatTime(route.node.endTime) }}
+                                    </span>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                        }        
+                    } @else {
+                        <div class="flex flex-col items-center justify-center mt-20 text-gray-400 text-center px-4">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                <svg class="w-8 h-8 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A2 2 0 013 15.487V6a2 2 0 011.106-1.789l5.447-2.724a2 2 0 011.894 0l5.447 2.724A2 2 0 0118 6v9.487a2 2 0 01-1.106 1.789L11.447 20a2 2 0 01-1.894 0z"/>
+                                </svg>
+                            </div>
+                            <p class="text-sm italic">Definisci i punti sulla mappa e clicca "Calcola" per visualizzare i risultati qui.</p>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="flex-1 h-full relative z-10">
+            <div id="map" class="w-full h-full"></div>
+        </div>
     </div>
-</body>
-</html>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
+</div>
+
+<router-outlet></router-outlet>

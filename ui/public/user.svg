@@ -1,0 +1,20 @@
+<svg version="1.1" id="UserLoggedInIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">
+  <g id="UserIcon">
+    <polygon fill="#76B82A" points="15,85 35,58 48,65 28,85"/>
+    
+    <polygon fill="#1D63D3" points="28,85 48,65 50,55 50,85"/>
+    
+    <polygon fill="#0099D8" points="50,85 50,55 52,65 72,85"/>
+    
+    <polygon fill="#B9CB00" points="72,85 52,65 65,58 85,85"/>
+    
+    <polygon fill="#1D63D3" points="50,18 35,25 35,41 50,48"/>
+    
+    <polygon fill="#0099D8" points="50,18 65,25 65,41 50,48"/>
+  </g>
+  <g id="LoggedInBadge">
+    <circle fill="#76B82A" cx="78" cy="74" r="14" stroke="#ffffff" stroke-width="3"/>
+    
+    <path fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M72,74 l4,4 l8,-8"/>
+  </g>
+</svg>
