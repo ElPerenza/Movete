@@ -7,14 +7,15 @@ import { LoginRequest } from "../models/login-request";
     providedIn: "root"
 })
 export class AuthService {
-    // Assicurati che l'URL punti alla porta del tuo server NestJS
     private baseUrl = "http://localhost:3000/auth";
 
     private loggedIn = new BehaviorSubject<boolean>(false);
 
     public isLoggedIn$ = this.loggedIn.asObservable();
 
-    constructor(private http: HttpClient) { }
+    constructor(private http: HttpClient) {
+        //    this.checkInitialSession();
+    }
 
     login(credentials: LoginRequest): Observable<any> {
         return this.http.post(`${this.baseUrl}/login`, credentials).pipe(
@@ -30,5 +31,20 @@ export class AuthService {
         return this.http.post(`${this.baseUrl}/logout`, {}).pipe(
             tap(() => this.loggedIn.next(false))
         );
+    }
+
+    checkInitialSession(): void {
+        this.http.get(`${this.baseUrl}/me`).subscribe({
+            next: (user) => {
+                this.loggedIn.next(true);
+            },
+            error: () => {
+                this.loggedIn.next(false); // no cookie or expired
+            }
+        });
+    }
+
+    public clearLocalSession(): void {
+        this.loggedIn.next(false);
     }
 }

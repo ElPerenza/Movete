@@ -13,6 +13,7 @@ import { Timetable } from "../timetable/timetable";
 import { environment } from "../../environments/environment";
 
 import { AuthService } from "../auth/services/auth.service";
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: "app-map",
@@ -65,6 +66,9 @@ export class Map implements AfterViewInit, OnInit {
     public useBbox: boolean = true;
     public isLoggedIn: boolean = false;
 
+    public showUserMenu: boolean = false;
+    private authSub!: Subscription;
+
     //TODO verify if cdr have some impact on performance but is the only thing that make the navbar working dynamically
     constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private authService: AuthService) { }
 
@@ -82,15 +86,30 @@ export class Map implements AfterViewInit, OnInit {
         }, 100);
     }
 
+    public logout(): void {
+        this.authService.logout().subscribe({
+            next: () => {
+                this.showUserMenu = false; //Close menu
+                // BehaviorSubject (AuthService) already gets rid of icon
+            },
+            error: (err) => console.error('Errore al logout', err)
+        });
+    }
+
     ngAfterViewInit(): void {
         this.initMap();
     }
-
     ngOnInit() {
-        this.authService.isLoggedIn$.subscribe(state => {
-            this.isLoggedIn = state;
+        this.authSub = this.authService.isLoggedIn$.subscribe((status: boolean) => {
+            this.isLoggedIn = status;
             this.cdr.detectChanges();
         });
+
+    }
+    ngOnDestroy() {
+        if (this.authSub) {
+            this.authSub.unsubscribe();
+        }
     }
 
     /**

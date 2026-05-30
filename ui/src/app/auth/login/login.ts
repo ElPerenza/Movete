@@ -12,20 +12,22 @@ export class Login {
     email = "";
     password = "";
     errorMessage = "";
+    isLoading = false;
 
     constructor(private authService: AuthService, private router: Router) { }
 
     onSubmit() {
         this.errorMessage = "";
+        this.isLoading = true;
         this.authService.login({ email: this.email, password: this.password }).subscribe({
             next: () => {
-                // Il browser salverà automaticamente il cookie HttpOnly. 
-                // Navighiamo verso la mappa principale.
+                //Browser savest cookie automatically --> go back to map
                 this.router.navigate(["/"]);
             },
             error: (err) => {
                 console.error("Errore di login:", err);
                 this.errorMessage = "Email o password non validi. Riprova.";
+                this.isLoading = false;
             }
         });
     }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Req, UnauthorizedException } from "@nestjs/common";
+import { Controller, Post, Get, Body, HttpCode, HttpStatus, Req, UnauthorizedException } from "@nestjs/common";
 import type { Request } from "express";
 import { AuthService } from "../services/auth.service";
 import { LoginRequestDto } from "../dto/loginRequest.dto";
@@ -14,6 +14,7 @@ export class AuthController {
         const user = await this.authService.register(registerDto.email, registerDto.password);
         return { message: "Registrazione completata con successo", user };
     }
+
     @Post("login")
     async login(@Body() loginDto: LoginRequestDto, @Req() request: Request) {
         const user = await this.authService.validateUser(loginDto.email, loginDto.password);
@@ -33,5 +34,22 @@ export class AuthController {
     logout(@Req() request: Request) {
         request.session.destroy(() => { });
         return { message: "Logout successful" };
+    }
+
+    @Get('me')
+    getProfile(@Req() request: Request) {
+        const session = request.session as any;
+
+        if (!session.userId) {
+            // 401
+            // --> Angular Interceptor to set isLoggedIn false
+            throw new UnauthorizedException("Sessione scaduta o non valida");
+        }
+
+        // 200 OK to Angular
+        return {
+            loggedIn: true,
+            userId: session.userId
+        };
     }
 }
