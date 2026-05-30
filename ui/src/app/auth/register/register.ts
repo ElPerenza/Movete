@@ -13,6 +13,7 @@ export class Register {
     password = "";
     confirmPassword = "";
     errorMessage = "";
+    isLoading = false;
 
     constructor(private authService: AuthService, private router: Router) { }
 
@@ -24,6 +25,8 @@ export class Register {
             return;
         }
 
+        this.isLoading = true;
+
         this.authService.register({ email: this.email, password: this.password }).subscribe({
             next: () => {
                 alert("Registrazione completata con successo! Ora puoi accedere.");
@@ -31,8 +34,8 @@ export class Register {
             },
             error: (err) => {
                 console.error("Errore di registrazione:", err);
-                // Estrae il messaggio di errore lanciato dal Backend (es. "Email già in uso")
                 this.errorMessage = err.error?.message || "Errore durante la registrazione.";
+                this.isLoading = false;
             }
         });
     }

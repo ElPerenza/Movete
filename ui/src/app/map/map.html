@@ -13,17 +13,32 @@
             <img src="/logo.svg" alt="Movete Logo" class="h-10 w-auto drop-shadow-[0_2px_8px_rgba(255,255,255,0.8)] hover:scale-105 transition-transform">
         </div>
         
-        <div class="flex-shrink-0 z-10">
-            @if (!isLoggedIn) {
-                <a routerLink="/login" class="bg-white text-blue-600 font-bold px-4 py-1.5 rounded text-sm hover:bg-blue-50 transition-colors shadow-sm">
-                    Accedi
-                </a>
-            } @else {
-                <button class="hover:scale-110 transition-all flex items-center justify-center p-1" title="Profilo Utente">
-                    <img src="/user.svg" alt="Utente" class="w-8 h-8 drop-shadow-md">
-                </button>
-            }
-        </div>
+            <div class="flex-shrink-0 z-10 relative">
+                @if (!isLoggedIn) {
+                    <a routerLink="/login" class="bg-white text-blue-600 font-bold px-4 py-1.5 rounded text-sm hover:bg-blue-50 transition-colors shadow-sm">
+                        Accedi
+                    </a>
+                } @else {
+                    <button (click)="showUserMenu = !showUserMenu" class="hover:scale-110 transition-all flex items-center justify-center p-1" title="Profilo Utente">
+                        <img src="/user.svg" alt="Utente" class="w-8 h-8 drop-shadow-md">
+                    </button>
+
+                    @if (showUserMenu) {
+                        <div class="fixed inset-0 z-40" (click)="showUserMenu = false"></div>
+                        
+                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-1 z-50 border border-gray-100 overflow-hidden">
+                            <div class="px-4 py-3 border-b border-gray-50 bg-gray-50">
+                                <p class="text-sm text-gray-500">Connesso come</p>
+                                <p class="text-sm font-bold text-gray-800 truncate">Utente Movete</p>
+                            </div>
+                            <button (click)="logout()" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                Esci
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
     </nav>
 
     @if (showPathForm) {
