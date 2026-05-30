@@ -1,7 +1,8 @@
-import { AfterViewInit, Component, ChangeDetectorRef, ViewChild } from "@angular/core";
+import { AfterViewInit, Component, ChangeDetectorRef, ViewChild, OnInit } from "@angular/core";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { CommonModule, DatePipe, DecimalPipe } from "@angular/common";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { RouterLink, RouterOutlet } from "@angular/router";
 import * as L from 'leaflet';
 import * as polyline from '@mapbox/polyline';
 import { Stop } from "../class/stop";
@@ -11,18 +12,21 @@ import { StopTime } from "../class/stop-time"
 import { Timetable } from "../timetable/timetable";
 import { environment } from "../../environments/environment";
 
+import { AuthService } from "../auth/services/auth.service";
+import { Subscription } from 'rxjs';
+
 @Component({
     selector: "app-map",
-    imports: [ReactiveFormsModule, FormsModule, Path, Timetable],
+    imports: [ReactiveFormsModule, FormsModule, Path, Timetable, RouterLink, RouterOutlet],
     templateUrl: "./map.html",
     styleUrl: "./map.css"
 })
-export class Map implements AfterViewInit {
+export class Map implements AfterViewInit, OnInit {
     private map!: L.Map;
     private stopsLayerMarkerGroup: L.LayerGroup = L.layerGroup();
     private _pathComponent!: Path;
     @ViewChild(Path) set pathComponent(content: Path) {
-        if (content) { 
+        if (content) {
             this._pathComponent = content;
             // Wait for the component to be loaded
             this.initDraggableFlags();
@@ -43,7 +47,7 @@ export class Map implements AfterViewInit {
     private panning: boolean = false;
 
     public currentStops: Stop[] = [];
-    public showSidebar: boolean = false;
+    public showSidebar: boolean = true;
     public selectedStopId: string | null = null;
     public showPathForm = false;
     Math = Math
@@ -60,13 +64,52 @@ export class Map implements AfterViewInit {
         { label: 'Cable Car', value: 'CABLE_CAR', checked: false }
     ];
     public useBbox: boolean = true;
+    public isLoggedIn: boolean = false;
 
+    public showUserMenu: boolean = false;
+    private authSub!: Subscription;
 
     //TODO verify if cdr have some impact on performance but is the only thing that make the navbar working dynamically
-    constructor(private http: HttpClient, private cdr: ChangeDetectorRef) { }
+    constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private authService: AuthService) { }
+
+    public toggleSidebar(): void {
+        this.showSidebar = !this.showSidebar;
+
+        /**
+         * to ensure Leaflet does not mess because of div size variations
+         * we use a timeout to make Tailwind apply safely its classes
+        */
+        setTimeout(() => {
+            if (this.map) {
+                this.map.invalidateSize();
+            }
+        }, 100);
+    }
+
+    public logout(): void {
+        this.authService.logout().subscribe({
+            next: () => {
+                this.showUserMenu = false; //Close menu
+                // BehaviorSubject (AuthService) already gets rid of icon
+            },
+            error: (err) => console.error('Errore al logout', err)
+        });
+    }
 
     ngAfterViewInit(): void {
         this.initMap();
+    }
+    ngOnInit() {
+        this.authSub = this.authService.isLoggedIn$.subscribe((status: boolean) => {
+            this.isLoggedIn = status;
+            this.cdr.detectChanges();
+        });
+
+    }
+    ngOnDestroy() {
+        if (this.authSub) {
+            this.authSub.unsubscribe();
+        }
     }
 
     /**
@@ -160,7 +203,7 @@ export class Map implements AfterViewInit {
             this.panning = true;
             this.map.panTo([stop.location.coordinates[1], stop.location.coordinates[0]]);
             const targetElement = document.getElementById(`stop-card-${stop.id}`);
-    
+
             if (targetElement) {
                 targetElement.scrollIntoView({
                     behavior: 'instant', // Smooth slide animation
@@ -199,7 +242,7 @@ export class Map implements AfterViewInit {
     // This function is called when you click the back arrow
     closeForm() {
         this.showPathForm = false;
-        this.calculatedRoutes = []; 
+        this.calculatedRoutes = [];
         this.pathsLayer.clearLayers();
         this.updateMapLayers();
     }
@@ -227,7 +270,7 @@ export class Map implements AfterViewInit {
         if (this.startMarker && this.destinationMarker) {
             // Clear the container layer group to ensure no visual ghosts
             this.flagsLayer.clearLayers();
-            
+
             // Re-add the existing instances (retaining their dragged coordinates!)
             this.flagsLayer.addLayer(this.startMarker);
             this.flagsLayer.addLayer(this.destinationMarker);
@@ -276,7 +319,7 @@ export class Map implements AfterViewInit {
         if (this._pathComponent) {
             this._pathComponent.updateFormFromMap(data);
         }
-        
+
     }
 
     /**
@@ -315,10 +358,10 @@ export class Map implements AfterViewInit {
 
             // Use Mapbox polyline dependency tool decoder
             const decodedPoints: [number, number][] = polyline.decode(leg.legGeometry.points);
-            
+
             // Format styling guidelines matchers based on transport variants types
             const pathStyle: L.PolylineOptions = {
-                color: leg.mode === 'WALK' ? '#3b82f6' : '#ef4444', 
+                color: leg.mode === 'WALK' ? '#3b82f6' : '#ef4444',
                 weight: 6,
                 opacity: leg.mode === 'WALK' ? 0.7 : 0.9,
                 dashArray: leg.mode === 'WALK' ? '8, 12' : undefined
@@ -368,7 +411,7 @@ export class Map implements AfterViewInit {
                     this.map.panTo(newLatLng);
                 }
             }
-            
+
         });
     }
 
@@ -378,7 +421,7 @@ export class Map implements AfterViewInit {
     public resetSearch(): void {
         // 1. Clear out the active map paths lines
         this.pathsLayer.clearLayers();
-        
+
         // 2. Clear out the alternatives data array
         this.calculatedRoutes = [];
         this.activeItineraryIndex = 0;
@@ -394,10 +437,10 @@ export class Map implements AfterViewInit {
         // 4. Force markers back to original default positions
         this.startMarker.setLatLng(this.defaultStart);
         this.destinationMarker.setLatLng(this.defaultEnd);
-        
+
         // 5. Center map view back to Trento default
         this.map.setView([46.0667, 11.1333], 15);
-        
+
         this.cdr.detectChanges();
     }
 

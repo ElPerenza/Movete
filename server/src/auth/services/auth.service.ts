@@ -12,7 +12,7 @@ export class AuthService {
         @InjectModel(User.name) private userModel: Model<UserDocument>
     ) { }
     async register(email: string, pass: string): Promise<any> {
-        // 1. Check if email already exists in the real database
+        // check if email already exists in the real database
         const existingUser = await this.userModel.findOne({ email }).exec();
         if (existingUser) {
             throw new ConflictException("Email già in uso");
