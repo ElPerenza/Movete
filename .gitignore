@@ -5,6 +5,4 @@ otp-server/
 /scripts/
 .env
 docker-compose.yml
-package-lock.json
-package.json
 otp/
