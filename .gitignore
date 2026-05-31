@@ -5,3 +5,4 @@ otp-server/
 /scripts/
 .env
 docker-compose.yml
+otp/
