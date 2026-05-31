@@ -6,6 +6,8 @@ import { AppService } from "./app.service";
 import { PoiModule } from "./poi/poi.module";
 import { PathModule } from './path/path.module';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from "./users/users.module";
+import { NotesModule } from "./notes/notes.module";
 
 @Module({
     imports: [
@@ -25,6 +27,8 @@ import { AuthModule } from './auth/auth.module';
         PoiModule,
         PathModule,
         AuthModule,
+        UsersModule,
+        NotesModule,
     ],
     controllers: [AppController],
     providers: [AppService]
