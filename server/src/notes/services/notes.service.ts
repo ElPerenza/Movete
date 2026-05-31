@@ -18,7 +18,7 @@ export class NotesService {
         return this.noteModel.findOneAndUpdate(
             { userId: new Types.ObjectId(userId), stopId: new Types.ObjectId(stopId) },
             { content },
-            { new: true, upsert: true }
+            { returnDocument: 'after', upsert: true }
         ).exec();
     }
 
@@ -31,4 +31,4 @@ export class NotesService {
         if (!deletedNote) throw new NotFoundException('Nota non trovata o non autorizzato');
         return deletedNote;
     }
-}
+} 

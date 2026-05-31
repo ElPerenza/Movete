@@ -1,31 +1,32 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { User, UserDocument } from '../models/user.schema';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model, Types } from "mongoose";
+import { User, UserDocument } from "../models/user.schema";
 
 @Injectable()
 export class UsersService {
     constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) { }
 
-    async getFavorites(userId: string) {
-        const user = await this.userModel.findById(userId).populate('favoriteStops').exec();
-        if (!user) throw new NotFoundException('Utente non trovato');
-        return user.favoriteStops;
+    async getFavourites(userId: string) {
+        const user = await this.userModel.findById(userId).populate("favouriteStops").exec();
+        if (!user) throw new NotFoundException("Utente non trovato");
+        return user.favouriteStops;
     }
 
-    async addFavoriteStop(userId: string, stopId: string) {
+    async addFavouriteStop(userId: string, stopId: string) {
         return this.userModel.findByIdAndUpdate(
             userId,
-            { $addToSet: { favoriteStops: new Types.ObjectId(stopId) } }, // $addToSet evita duplicati!
-            { new: true }
+            { $addToSet: { favouriteStops: new Types.ObjectId(stopId) } },
+            { returnDocument: 'after' }
         ).exec();
     }
 
-    async removeFavoriteStop(userId: string, stopId: string) {
+    async removeFavouriteStop(userId: string, stopId: string) {
         return this.userModel.findByIdAndUpdate(
             userId,
-            { $pull: { favoriteStops: new Types.ObjectId(stopId) } }, // $pull rimuove dall'array
-            { new: true }
+            { $pull: { favouriteStops: new Types.ObjectId(stopId) } },
+            { returnDocument: 'after' }
         ).exec();
     }
+
 }

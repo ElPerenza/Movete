@@ -2,11 +2,10 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
 
 export enum UserRole {
-    USER = 'user',
-    ADMIN = 'admin',
-    EMPLOYEE = 'employee',
+    USER = "user",
+    ADMIN = "admin",
+    EMPLOYEE = "employee"
 }
-
 
 @Schema()
 export class User {
@@ -19,13 +18,12 @@ export class User {
     @Prop({ type: String, enum: UserRole, default: UserRole.USER })
     role: UserRole;
 
-    @Prop({ type: [{ type: Types.ObjectId, ref: 'Stop' }], default: [] })
-    favoriteStops: Types.ObjectId[];
+    @Prop({ type: [{ type: Types.ObjectId, ref: "Stop" }], default: [] })
+    favouriteStops: Types.ObjectId[];
 
-    //Predisposition for favorite routes
+    //Predisposition for favourite routes
     //@Prop({ type: [String], default: [] })
-    //favoriteRoutes: string[];
-
+    //favouriteRoutes: string[];
 }
 
 export type UserDocument = HydratedDocument<User>;
