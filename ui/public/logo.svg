@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   version="1.1"
+   viewBox="0 0 305.4725 265.07208"
+   fill="none"
+   stroke="none"
+   stroke-linecap="square"
+   stroke-miterlimit="10"
+   id="svg6"
+   sodipodi:docname="test inkscape.svg"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   width="305.4725"
+   height="265.07208"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs6" />
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.6319444"
+     inkscape:cx="185.05532"
+     inkscape:cy="158.4"
+     inkscape:window-width="2560"
+     inkscape:window-height="1377"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g6" />
+  <clipPath
+     id="p.0">
+    <path
+       d="M 0,0 H 960 V 720 H 0 Z"
+       clip-rule="nonzero"
+       id="path1" />
+  </clipPath>
+  <g
+     clip-path="url(#p.0)"
+     id="g6"
+     style="display:inline"
+     transform="translate(-305.72738,-227.46405)">
+    <g
+       filter="url(#shadowFilter-p.1)"
+       id="g2">
+      <use
+         xlink:href="#p.1"
+         transform="translate(0,2)"
+         id="use2" />
+    </g>
+    <defs
+       id="defs2">
+      <filter
+         id="shadowFilter-p.1"
+         filterUnits="userSpaceOnUse">
+        <feGaussianBlur
+           in="SourceAlpha"
+           stdDeviation="2.0"
+           result="blur"
+           id="feGaussianBlur2" />
+        <feComponentTransfer
+           in="blur"
+           color-interpolation-filters="sRGB"
+           id="feComponentTransfer2">
+          <feFuncR
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncR2" />
+          <feFuncG
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncG2" />
+          <feFuncB
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncB2" />
+          <feFuncA
+             type="linear"
+             slope="0.5"
+             intercept="0"
+             id="feFuncA2" />
+        </feComponentTransfer>
+      </filter>
+    </defs>
+    <g
+       id="p.1">
+      <path
+         fill="#1155cc"
+         d="m 406.20255,420.65363 -25.91046,-97.37631 23.87366,-95.52788 54.83462,206.07875 z"
+         fill-rule="evenodd"
+         id="path3" />
+    </g>
+    <g
+       filter="url(#shadowFilter-p.2)"
+       id="g3">
+      <use
+         xlink:href="#p.2"
+         transform="translate(0,2)"
+         id="use3" />
+    </g>
+    <defs
+       id="defs3">
+      <filter
+         id="shadowFilter-p.2"
+         filterUnits="userSpaceOnUse">
+        <feGaussianBlur
+           in="SourceAlpha"
+           stdDeviation="2.0"
+           result="blur"
+           id="feGaussianBlur3" />
+        <feComponentTransfer
+           in="blur"
+           color-interpolation-filters="sRGB"
+           id="feComponentTransfer3">
+          <feFuncR
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncR3" />
+          <feFuncG
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncG3" />
+          <feFuncB
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncB3" />
+          <feFuncA
+             type="linear"
+             slope="0.5"
+             intercept="0"
+             id="feFuncA3" />
+        </feComponentTransfer>
+      </filter>
+    </defs>
+    <g
+       id="p.2">
+      <path
+         fill="#0092d0"
+         d="m 477.76392,254.09183 -41.7901,93.75986 23.12604,85.9751 88.44098,-198.4252 z"
+         fill-rule="evenodd"
+         id="path4" />
+    </g>
+    <g
+       filter="url(#shadowFilter-p.3)"
+       id="g4">
+      <use
+         xlink:href="#p.3"
+         transform="translate(0,2)"
+         id="use4" />
+    </g>
+    <defs
+       id="defs4">
+      <filter
+         id="shadowFilter-p.3"
+         filterUnits="userSpaceOnUse">
+        <feGaussianBlur
+           in="SourceAlpha"
+           stdDeviation="2.0"
+           result="blur"
+           id="feGaussianBlur4" />
+        <feComponentTransfer
+           in="blur"
+           color-interpolation-filters="sRGB"
+           id="feComponentTransfer4">
+          <feFuncR
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncR4" />
+          <feFuncG
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncG4" />
+          <feFuncB
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncB4" />
+          <feFuncA
+             type="linear"
+             slope="0.5"
+             intercept="0"
+             id="feFuncA4" />
+        </feComponentTransfer>
+      </filter>
+    </defs>
+    <g
+       id="p.3">
+      <path
+         fill="#cbd300"
+         d="m 505.0112,330.64212 31.94907,128.80606 74.23962,33.08795 -63.77954,-257.13385 z"
+         fill-rule="evenodd"
+         id="path5" />
+    </g>
+    <g
+       filter="url(#shadowFilter-p.4)"
+       id="g5"
+       style="display:inline">
+      <use
+         xlink:href="#p.4"
+         transform="translate(0,2)"
+         id="use5" />
+    </g>
+    <defs
+       id="defs5">
+      <filter
+         id="shadowFilter-p.4"
+         filterUnits="userSpaceOnUse">
+        <feGaussianBlur
+           in="SourceAlpha"
+           stdDeviation="2.0"
+           result="blur"
+           id="feGaussianBlur5" />
+        <feComponentTransfer
+           in="blur"
+           color-interpolation-filters="sRGB"
+           id="feComponentTransfer5">
+          <feFuncR
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncR5" />
+          <feFuncG
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncG5" />
+          <feFuncB
+             type="linear"
+             slope="0"
+             intercept="0.0"
+             id="feFuncB5" />
+          <feFuncA
+             type="linear"
+             slope="0.5"
+             intercept="0"
+             id="feFuncA5" />
+        </feComponentTransfer>
+      </filter>
+    </defs>
+    <g
+       id="p.4"
+       style="display:inline">
+      <path
+         fill="#83b81a"
+         d="m 334.07925,297.49103 -28.35187,112.20834 41.74899,41.76468 56.59842,-224 z"
+         fill-rule="evenodd"
+         id="path6" />
+    </g>
+  </g>
+</svg>
