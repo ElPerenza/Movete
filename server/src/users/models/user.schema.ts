@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import { HydratedDocument, Types } from "mongoose";
 
 export enum UserRole {
     USER = 'user',
@@ -18,6 +18,14 @@ export class User {
 
     @Prop({ type: String, enum: UserRole, default: UserRole.USER })
     role: UserRole;
+
+    @Prop({ type: [{ type: Types.ObjectId, ref: 'Stop' }], default: [] })
+    favoriteStops: Types.ObjectId[];
+
+    //Predisposition for favorite routes
+    //@Prop({ type: [String], default: [] })
+    //favoriteRoutes: string[];
+
 }
 
 export type UserDocument = HydratedDocument<User>;
