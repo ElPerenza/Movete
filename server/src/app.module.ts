@@ -4,11 +4,14 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { PoiModule } from "./poi/poi.module";
+import { RealtimeModule } from './realtime/realtime.module';
+import { ScheduleModule } from "@nestjs/schedule";
 import { PathModule } from './path/path.module';
 
 @Module({
     imports: [
         ConfigModule.forRoot(),
+        ScheduleModule.forRoot(),
         MongooseModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
@@ -22,6 +25,7 @@ import { PathModule } from './path/path.module';
             }
         }),
         PoiModule,
+        RealtimeModule,
         PathModule,
     ],
     controllers: [AppController],
