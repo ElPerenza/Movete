@@ -86,6 +86,22 @@ export class Timetable implements OnChanges {
         });
     }
 
+    protected isUpcomingStop(stop: TripDetail, allStops: TripDetail[]): boolean {
+        const realtimeStopIndex = allStops.findIndex(s => s.realtime);
+        if(realtimeStopIndex === -1) {
+            const now = Date.now();
+            const stopTime = Date.parse(stop.scheduledArrival) + (stop.delay * 1000);
+            return stopTime - now > 0;
+        } else {
+            const delay = allStops.at(-1)!.delay; // workaround only for TT until vehicle positions get implemented (will probably break once Trenitalia realtime data gets added)
+            if(delay <= 0) {
+                return allStops.findIndex(s => s === stop) >= realtimeStopIndex;
+            } else {
+                return allStops.findIndex(s => s === stop) > realtimeStopIndex;
+            }
+        }
+    }
+
     public closeModal(): void {
         this.isModalOpen = false;
         this.tripDetails = [];

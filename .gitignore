@@ -1,8 +1,15 @@
 /node_modules
+.env
+*.rest
+
+# OpenTripPlanner
+/otp/data
+otp-shaded-*.jar
+/otp/graph.obj
+/otp/streetGraph.obj
 otp-server/
 .env
 /mongo-data/
 /scripts/
 .env
 docker-compose.yml
-otp/
