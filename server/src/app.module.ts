@@ -7,6 +7,7 @@ import { PoiModule } from "./poi/poi.module";
 import { RealtimeModule } from './realtime/realtime.module';
 import { ScheduleModule } from "@nestjs/schedule";
 import { PathModule } from './path/path.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
     imports: [
@@ -27,6 +28,7 @@ import { PathModule } from './path/path.module';
         PoiModule,
         RealtimeModule,
         PathModule,
+        AuthModule,
     ],
     controllers: [AppController],
     providers: [AppService]
