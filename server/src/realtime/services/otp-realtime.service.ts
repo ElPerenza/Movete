@@ -21,21 +21,22 @@ export class OtpRealtimeService {
     }
 
     /**
-     * Format a {@link Date} object as a YYYYMMDD string.
+     * Format a {@link Date} object or UNIX milliseconds timestamp as a YYYYMMDD string.
      * @param date the date to format
      * @returns the formatted date
      */
-    formatAsYYYYMMDDD(date: Date): string {
-        let dateString = date.getFullYear().toString();
-        if(date.getMonth() + 1 >= 10) {
-            dateString += (date.getMonth() + 1).toString();
+    formatAsYYYYMMDDD(date: Date | number): string {
+        const dateObj = typeof date === "object" ? date : new Date(date);
+        let dateString = dateObj.getFullYear().toString();
+        if(dateObj.getMonth() + 1 >= 10) {
+            dateString += (dateObj.getMonth() + 1).toString();
         } else {
-            dateString += `0${date.getMonth() + 1}`;
+            dateString += `0${dateObj.getMonth() + 1}`;
         }
-        if(date.getDate() >= 10) {
-            dateString += date.getDate().toString();
+        if(dateObj.getDate() >= 10) {
+            dateString += dateObj.getDate().toString();
         } else {
-            dateString += `0${date.getDate()}`;
+            dateString += `0${dateObj.getDate()}`;
         }
         return dateString;
     }

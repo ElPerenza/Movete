@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { GTFS_RT_PROVIDERS } from './provider-tokens';
 import { GtfsRealtimeProvider } from './gtfs-realtime-providers/gtfs-realtime-provider';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ViaggiatrenoApiService } from './services/viaggiatreno-api.service';
 
 const gtfsRealtimeProviders: Provider<Map<string, GtfsRealtimeProvider>> = {
     provide: GTFS_RT_PROVIDERS,
@@ -27,6 +28,7 @@ const gtfsRealtimeProviders: Provider<Map<string, GtfsRealtimeProvider>> = {
         OtpRealtimeService, 
         TrentinoTrasportiApiService,
         TrentinoTrasportiGtfsRealtimeFactory,
+        ViaggiatrenoApiService,
         gtfsRealtimeProviders
     ]
 })
