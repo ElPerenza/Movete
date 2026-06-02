@@ -8,6 +8,7 @@ import { StopTime } from "../class/stop-time";
 import { AuthService } from "../auth/services/auth.service";
 import { UserService } from "../user/services/user.service";
 import { NoteService } from "../user/services/note.service";
+import { AlertService, Alert } from "../alert/services/alert.service";
 
 export interface TripDetail {
     stopName: string;
@@ -48,6 +49,10 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     public isLoadingNote: boolean = false;
     public isNoteModalOpen: boolean = false;
     public tempNoteContent: string = '';
+
+    public activeAlerts: Alert[] = [];
+    public isLoadingAlerts: boolean = false;
+
     //Endipoint backend
     private baseUrl: string = "http://localhost:3000/pois/stop/";
 
@@ -56,7 +61,8 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         private cdr: ChangeDetectorRef,
         private authService: AuthService,
         private userService: UserService,
-        private noteService: NoteService
+        private noteService: NoteService,
+        private alertService: AlertService,
     ) { }
 
     ngOnInit() {
@@ -71,6 +77,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     ngOnChanges(changes: SimpleChanges): void {
         if (changes["stop"] && this.stop) {
             this.fetchStopTimes(this.stop.id);
+            this.loadAlerts();
             if (this.isLoggedIn) {
                 this.loadUserDataForStop();
             }
@@ -189,6 +196,24 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
                 console.error("Error fetching stop times", err);
                 this.timesError = "Impossibile caricare gli orari in tempo reale.";
                 this.isLoadingTimes = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    loadAlerts(): void {
+        this.isLoadingAlerts = true;
+        this.activeAlerts = [];
+
+        this.alertService.getActiveAlertsForStop(this.stop.id).subscribe({
+            next: (alerts) => {
+                this.activeAlerts = alerts;
+                this.isLoadingAlerts = false;
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error("Errore durante il caricamento degli avvisi", err);
+                this.isLoadingAlerts = false;
                 this.cdr.detectChanges();
             }
         });
