@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  osmium-converter:
+    image: ubuntu:24.04
+    volumes:
+      - .:/data
+    working_dir: /data
+    entrypoint: /bin/sh
+    command: >
+      -c "
+      echo 'Updating package list...' &&
+      apt-get update -qy &&
+      echo 'Installing osmosis...' &&
+      apt-get install -qy osmosis &&
+      echo 'Injecting mandatory OSM v0.6 metadata into XML files...' &&
+      echo 'Compiling car parks into binary PBF...' &&
+      osmosis --read-xml file='trentino_car_parks.osm' --write-pbf file='trentino_car_parks.pbf' &&
+      echo 'Compiling bike parks into binary PBF...' &&
+      osmosis --read-xml file='trentino_bike_parks.osm' --write-pbf file='trentino_bike_parks.pbf' &&
+      osmosis --read-xml file='trentino_zone_parcheggio.osm' --write-pbf file='trentino_zone_parcheggio.pbf' &&
+      echo 'Conversion complete! PBF files created successfully.'"
