@@ -53,11 +53,8 @@ export class ParkService implements OnApplicationBootstrap {
      */
     async findParkByOtpId(otpId: string): Promise<ParkDocument | null> {
         this.logger.debug(`Searching park with OTP id: ${otpId}`);
-        const result = await this.parkModel.find({ otpParks: otpId }).limit(1).exec();
-        if(result.length === 0) {
-            return null;
-        }
-        return result[0];
+        const result = await this.parkModel.findOne({ otpId }).exec();
+        return result;
     }
 
     /**
@@ -125,6 +122,7 @@ export class ParkService implements OnApplicationBootstrap {
         let parksAdded = 0;
         const otpCarParks = await this.otpService.getAllCarPark();
         for(const otpCarPark of otpCarParks) {
+
             if(await this.findParkByOtpId(otpCarPark.otpId) != null) {
                 // we don't add OTP parks that already have their ID in the database
                 continue;
@@ -134,7 +132,7 @@ export class ParkService implements OnApplicationBootstrap {
             newPark.name = otpCarPark.name;
             newPark.location = otpCarPark.location;
             newPark.otpId = otpCarPark.otpId;
-            newPark.maxCapaity = otpCarPark.maxCapacity
+            newPark.maxCapacity = otpCarPark.maxCapacity
             newPark.parkType = ParkType.CAR;
             await this.create(newPark);
             parksAdded++;
@@ -142,7 +140,7 @@ export class ParkService implements OnApplicationBootstrap {
 
         this.logger.log(`Park initialization complete: added ${parksAdded} of ${otpCarParks.length} parks present in OpenTripPlanner`);
         parksAdded = 0;
-        const otpBikeParks = await this.otpService.getAllCarPark();
+        const otpBikeParks = await this.otpService.getAllBikePark();
         for(const otpBikePark of otpBikeParks) {
             if(await this.findParkByOtpId(otpBikePark.otpId) != null) {
                 // we don't add OTP parks that already have their ID in the database
@@ -153,7 +151,7 @@ export class ParkService implements OnApplicationBootstrap {
             newPark.name = otpBikePark.name;
             newPark.location = otpBikePark.location;
             newPark.otpId = otpBikePark.otpId;
-            newPark.maxCapaity = otpBikePark.maxCapacity
+            newPark.maxCapacity = otpBikePark.maxCapacity
             newPark.parkType = ParkType.BIKE;
             await this.create(newPark);
             parksAdded++;

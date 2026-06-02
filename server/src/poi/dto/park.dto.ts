@@ -32,7 +32,7 @@ export class ParkDto {
     parkType: ParkType;
 
     @Expose()
-    maxCapaity: number;
+    maxCapacity: number;
 
 }
 

@@ -11,8 +11,10 @@ export enum ParkType{
 @Schema()
 export class Park {
 
+    @Prop()
     otpId: string;
 
+    @Prop()
     trentinoApiId: string;
 
     @Prop({ required: true })
@@ -27,6 +29,7 @@ export class Park {
     @Prop({ type: String, enum: ParkType, required: true })
     parkType: ParkType;
 
+    @Prop()
     maxCapacity: number;
 
 }
