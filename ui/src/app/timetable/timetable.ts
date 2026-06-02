@@ -45,9 +45,9 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
 
     public noteContent: string = "";
     public savedNoteId: string | undefined = undefined;
-    public isEditingNote: boolean = false;
     public isLoadingNote: boolean = false;
-
+    public isNoteModalOpen: boolean = false;
+    public tempNoteContent: string = '';
     //Endipoint backend
     private baseUrl: string = "http://localhost:3000/pois/stop/";
 
@@ -84,7 +84,6 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     //---Notes and Favourites---
     private loadUserDataForStop() {
         this.isLoadingNote = true;
-        this.isEditingNote = false;
 
         this.userService.getFavourites().subscribe({
             next: (favourites) => {
@@ -94,7 +93,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
             error: (err) => console.error("Errore caricamento preferiti", err)
         });
 
-        // 2. Carica la nota
+        // loads the note
         this.noteService.getNoteForStop(this.stop.id).subscribe({
             next: (note) => {
                 this.noteContent = note?.content || '';
@@ -132,26 +131,45 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         }
     }
 
+
+    public openNoteModal(event: Event) {
+        event.stopPropagation();
+        this.tempNoteContent = this.noteContent; // Copia il testo attuale per modificarlo
+        this.isNoteModalOpen = true;
+    }
+
+    public closeNoteModal(event: Event) {
+        event.stopPropagation();
+        this.isNoteModalOpen = false;
+    }
+
     public saveNote(event: Event) {
         event.stopPropagation();
-        if (!this.noteContent.trim()) {
+
+        // If user empties the note --> delete note
+        if (!this.tempNoteContent.trim()) {
             if (this.savedNoteId) {
+                this.isLoadingNote = true;
                 this.noteService.deleteNote(this.savedNoteId).subscribe(() => {
-                    this.noteContent = "";
+                    this.noteContent = '';
                     this.savedNoteId = undefined;
-                    this.isEditingNote = false;
+                    this.isLoadingNote = false;
+                    this.isNoteModalOpen = false;
+                    this.cdr.detectChanges();
                 });
             } else {
-                this.isEditingNote = false;
+                this.isNoteModalOpen = false;
             }
             return;
         }
 
+        // otherwise save
         this.isLoadingNote = true;
-        this.noteService.saveNote(this.stop.id, this.noteContent).subscribe(res => {
-            this.savedNoteId = res._id; // Aggiorna l'ID dopo il salvataggio
-            this.isEditingNote = false;
+        this.noteService.saveNote(this.stop.id, this.tempNoteContent).subscribe((res) => {
+            this.savedNoteId = res._id;
+            this.noteContent = this.tempNoteContent;
             this.isLoadingNote = false;
+            this.isNoteModalOpen = false;
             this.cdr.detectChanges();
         });
     }
