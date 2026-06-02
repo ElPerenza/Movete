@@ -1,6 +1,8 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { StopTime } from '../models/stop-time.model';
 import { ConfigService } from '@nestjs/config';
+import { Park } from '../../poi/models/park.schema';
+import { ParkType } from '../../poi/models/park.schema';
 
 // TODO: merge this and OTPService
 
@@ -247,6 +249,99 @@ export class OtpService {
         } catch (error) {
             console.error("Failed to retrieve trip details:", error);
             throw new HttpException('Internal error while retrieving trip data', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Accepts an array of strings to handle multiple GTFS IDs for a single logical stop
+    async getAllCarPark(): Promise<Park[]> {
+        const query = `
+            query getCarPark {
+                carParks {
+                    id
+                    name
+                    tags
+                    maxCapacity
+                    lat
+                    lon
+                }
+            }
+        `;
+        try {
+            const response = await fetch(this.OTP_GRAPHQL_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    query
+                }),
+            });
+            const { data, errors } = await response.json();
+
+            if (errors || !data?.carParks) {
+                return [];
+            }
+
+            return data.carParks.map((rawPark: any): Park => {
+                return {
+                otpId: rawPark.id,
+                trentinoApiId: "", // Left null if it's not present in this OTP query
+                name: rawPark.name || 'Unnamed Parking',
+                location: {
+                    type: 'Point',
+                    // CRITICAL: MongoDB GeoJSON coordinates must be [longitude, latitude]
+                    coordinates: [rawPark.lon, rawPark.lat],
+                },
+                parkType: ParkType.CAR, // Explicitly set based on this method context
+                maxCapacity: rawPark.maxCapacity ?? null, // Fallback safely if null
+                };
+            });
+        } catch (error) {
+            console.error(`Failed to fetch car parkings: ${error}`);
+            return [];
+        }
+    }
+
+    async getAllBikePark(): Promise<Park[]> {
+        const query = `
+            query getBikePark {
+                bikeParks{
+                    id
+                    name
+                    lat
+                    lon
+                }
+            }
+        `;
+        try {
+            const response = await fetch(this.OTP_GRAPHQL_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    query
+                }),
+            });
+            const { data, errors } = await response.json();
+
+            if (errors || !data?.bikeParks) {
+                return [];
+            }
+
+            return data.bikeParks.map((rawPark: any): Park => {
+                return {
+                otpId: rawPark.id,
+                trentinoApiId: "", // Left null if it's not present in this OTP query
+                name: rawPark.name || 'Unnamed Parking',
+                location: {
+                    type: 'Point',
+                    // CRITICAL: MongoDB GeoJSON coordinates must be [longitude, latitude]
+                    coordinates: [rawPark.lon, rawPark.lat],
+                },
+                parkType: ParkType.BIKE, // Explicitly set based on this method context
+                maxCapacity: rawPark.maxCapacity ?? null, // Fallback safely if null
+                };
+            });
+        } catch (error) {
+            console.error(`Failed to fetch car parkings: ${error}`);
+            return [];
         }
     }
 }
