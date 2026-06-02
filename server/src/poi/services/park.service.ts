@@ -141,7 +141,7 @@ export class ParkService implements OnApplicationBootstrap {
         }
 
         this.logger.log(`Park initialization complete: added ${parksAdded} of ${otpCarParks.length} parks present in OpenTripPlanner`);
-
+        parksAdded = 0;
         const otpBikeParks = await this.otpService.getAllCarPark();
         for(const otpBikePark of otpBikeParks) {
             if(await this.findParkByOtpId(otpBikePark.otpId) != null) {
