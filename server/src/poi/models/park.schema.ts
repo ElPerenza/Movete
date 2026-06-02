@@ -4,8 +4,8 @@ import { Point } from "../../common/point";
 
 
 export enum ParkType{
-    CAR = "BIKE_PARK",
-    BIKE = "CAR_PARK"
+    CAR = "car",
+    BIKE = "bike"
 }
 
 @Schema()

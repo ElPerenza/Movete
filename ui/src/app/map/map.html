@@ -116,6 +116,19 @@
                             <li class="text-center text-gray-500 mt-10">Nessuna fermata trovata.</li>
                         }
                     </ul>
+
+                    <ul class="space-y-2">
+                        @for (park of currentParks; track park.id) {
+                            <li (click)="selectPark(park)" [id]="'stop-card-' + park.id"
+                                class="p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
+                                <div class="font-medium text-gray-800">{{ park.name }}</div>
+                                <div class="font-medium text-gray-800">Tipologia: {{ park.parkType }}</div>
+                                <div class="font-medium text-gray-800">Capienza: {{ park.maxCapacity }}</div>
+                            </li>
+                        } @empty {
+                            <li class="text-center text-gray-500 mt-10">Nessuna fermata trovata.</li>
+                        }
+                    </ul>
                 } @else {
                     <div class="flex items-center justify-between w-full mb-3">
                         <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Percorsi Disponibili</span>
