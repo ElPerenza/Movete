@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ViaggiatrenoTrainStatusResponse } from "../types/viaggiatreno-api-types";
-import { OtpRealtimeService } from "./otp-realtime.service";
+import { OtpService } from "../../otp/services/otp.service";
 
 @Injectable()
 export class ViaggiatrenoApiService {
@@ -9,7 +9,7 @@ export class ViaggiatrenoApiService {
     private readonly API_URL: string;
 
     constructor(
-        private readonly otpRealtimeService: OtpRealtimeService,
+        private readonly otpService: OtpService,
         configService: ConfigService
     ) {
         this.API_URL = configService.getOrThrow("VT_API_URL");
@@ -33,7 +33,7 @@ export class ViaggiatrenoApiService {
         return {
             trainNumber: responseBody.numeroTreno,
             status: responseBody.provvedimento === 0 ? responseBody.tipoTreno === "PG" ? TripStatus.NORMAL : TripStatus.PARTIALLY_CANCELLED : responseBody.provvedimento,
-            serviceDate: this.otpRealtimeService.formatAsYYYYMMDDD(responseBody.dataPartenzaTreno),
+            serviceDate: this.otpService.formatAsYYYYMMDDD(responseBody.dataPartenzaTreno),
             lastRecordedLocation: responseBody.stazioneUltimoRilevamento === "--" ? undefined : responseBody.stazioneUltimoRilevamento,
             lastRecordingTime: responseBody.oraUltimoRilevamento,
             stops: responseBody.fermate.map(stop => {

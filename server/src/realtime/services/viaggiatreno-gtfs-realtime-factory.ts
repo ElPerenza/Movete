@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { OtpRealtimeService } from "./otp-realtime.service";
+import { OtpService } from "../../otp/services/otp.service";
 import { ViaggiatrenoGtfsRealtimeProvider } from "../gtfs-realtime-providers/viaggiatreno-gtfs-realtime-provider";
 import { ViaggiatrenoApiService } from "./viaggiatreno-api.service";
 import { SchedulerRegistry } from "@nestjs/schedule";
@@ -8,7 +8,7 @@ import { SchedulerRegistry } from "@nestjs/schedule";
 export class ViaggiatrenoGtfsRealtimeFactory {
 
     constructor(
-        private readonly realtimeService: OtpRealtimeService,
+        private readonly otpService: OtpService,
         private readonly vtApiService: ViaggiatrenoApiService,
         private readonly schedulerRegistry: SchedulerRegistry,
     ) {}
@@ -20,7 +20,7 @@ export class ViaggiatrenoGtfsRealtimeFactory {
      */
     forFeed(feedId: string): ViaggiatrenoGtfsRealtimeProvider {
         return new ViaggiatrenoGtfsRealtimeProvider(
-            this.realtimeService,
+            this.otpService,
             this.vtApiService,
             this.schedulerRegistry,
             feedId

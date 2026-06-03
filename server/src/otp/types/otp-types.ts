@@ -32,10 +32,36 @@ export interface Stoptime {
  * Essential information about an OpenTripPlanner trip.
  */
 export interface TripInformation {
+    /** OTP trip ID. */
     id: string
+    /** Trip headsign, to show trip route to users. */
     headsign: string
+    /** Active service date. */
     serviceDate: Date
+    /** Short name of the route the trip is running. */
     routeShortName: string
+}
+
+/**
+ * Essential OTP trip information needed by GTFS realtime providers.
+ * Contains data about origin/destination times and stop sequence numbers.
+ */
+export interface TripPathInformation {
+    /** OTP trip ID. */
+    tripId: string
+    /** Active service date in YYYYMMDD format. */
+    serviceDate: string
+    /** Scheduled origin departure time in seconds since UNIX epoch. */
+    departureTime: number
+    /** Scheduled destination arrival time in seconds since UNIX epoch. */
+    arrivalTime: number
+    /** Stops encontered by this trip. */
+    stops: {
+        /** OTP stop ID. */
+        id: string
+        /** GTFS `stop_sequence` number */
+        sequenceNumber: number
+    }[]
 }
 
 /**

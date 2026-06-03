@@ -1,8 +1,8 @@
 import { Logger } from "@nestjs/common";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
-import { TripDates, TripServiceDateInformation } from "../types/otp-types";
-import { OtpRealtimeService } from "../services/otp-realtime.service";
+import { OtpService } from "../../otp/services/otp.service";
+import { TripPathInformation } from "../../otp/types/otp-types";
 import { FeedEntitySchema, FeedHeader_Incrementality, FeedMessageSchema } from "../../generated/gtfs-realtime_pb";
 import { create, toBinary } from "@bufbuild/protobuf";
 import { TrentinoTrasportiApiService } from "../services/trentino-trasporti-api.service";
@@ -20,13 +20,12 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
     private readonly TRIP_SELECTION_PADDING = 600;
 
     // TODO: A lot of shared state between methods in this class. It works and isn't terribly complex, but I'd like a cleaner way of doing things in the future
-    private tripDates?: TripDates[]; // these are all trips in the feed that this provider must consider. They don't change after initialization. Should they be passed in the constructor?
-    private runningToday?: TripServiceDateInformation[];
+    private runningToday?: TripPathInformation[];
     private readonly trackedTrips: Set<string> = new Set();
     private feed?: Uint8Array;
 
     constructor(
-        private readonly realtimeService: OtpRealtimeService,
+        private readonly otpService: OtpService,
         private readonly ttApiService: TrentinoTrasportiApiService,
         private readonly schedulerRegistry: SchedulerRegistry,
         private readonly feedId: string
@@ -70,22 +69,12 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
      * Retrieve the arrival and departure times of trips running on the current date.
      * @returns the arrival and departure times of trips running today
      */
-    private async getTripsRunningToday(): Promise<TripServiceDateInformation[]> {
+    private async getTripsRunningToday(): Promise<TripPathInformation[]> {
         const start = Date.now();
-
-        if(!this.tripDates) {
-            this.tripDates = await this.realtimeService.getTripsDatesByFeed(this.feedId);
-        }
-
         // TODO: timezones? as long as server is running in Europe/Rome timezone it's fine
-        const todayDate = this.realtimeService.formatAsYYYYMMDDD(new Date());
-        const tripsRunning = this.tripDates.filter(td => td.activeDates.includes(todayDate));
-        const tripTimes = await Promise.all(tripsRunning.map(async td => {
-            return await this.realtimeService.getTripInfoForServiceDate(td.tripId, todayDate);
-        }));
-
-        this.logger.log(`[${this.feedId}] Retrieved today's trips departure/arrival times in ${Date.now() - start}ms. ${tripTimes.length} trips total.`);
-        return tripTimes;
+        const tripsRunningToday = await this.otpService.getTripPathsByFeed(this.feedId, new Date());
+        this.logger.log(`[${this.feedId}] Retrieved today's trips departure/arrival times in ${Date.now() - start}ms. ${tripsRunningToday.length} trips total.`);
+        return tripsRunningToday;
     }
 
     /**
@@ -143,7 +132,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
                 timestamp: BigInt(Math.floor(Date.now() / 1000))
             }
         });
-        const todayDate = this.realtimeService.formatAsYYYYMMDDD(new Date());
+        const todayDate = this.otpService.formatAsYYYYMMDDD(new Date());
 
         for(const tripId of trips) {
 

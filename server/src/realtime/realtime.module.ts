@@ -1,5 +1,4 @@
 import { Module, Provider } from '@nestjs/common';
-import { OtpRealtimeService } from './services/otp-realtime.service';
 import { GraphQLClientModule } from '../graphql-client/graphql-client.module';
 import { GtfsRealtimeController } from './controllers/gtfs-realtime.controller';
 import { TrentinoTrasportiApiService } from './services/trentino-trasporti-api.service';
@@ -10,6 +9,7 @@ import { GtfsRealtimeProvider } from './gtfs-realtime-providers/gtfs-realtime-pr
 import { ScheduleModule } from '@nestjs/schedule';
 import { ViaggiatrenoApiService } from './services/viaggiatreno-api.service';
 import { ViaggiatrenoGtfsRealtimeFactory } from './services/viaggiatreno-gtfs-realtime-factory';
+import { OtpModule } from '../otp/otp.module';
 
 // TODO: realtime providers can at times run out of available sockets when making requests with fetch() and fail. Need to configure a connection pool to prevent it from happening.
 
@@ -26,10 +26,14 @@ const gtfsRealtimeProviders: Provider<Map<string, GtfsRealtimeProvider>> = {
 };
 
 @Module({
-    imports: [GraphQLClientModule, ConfigModule, ScheduleModule],
+    imports: [
+        GraphQLClientModule,
+        ConfigModule, 
+        ScheduleModule,
+        OtpModule
+    ],
     controllers: [GtfsRealtimeController],
-    providers: [
-        OtpRealtimeService, 
+    providers: [ 
         TrentinoTrasportiApiService,
         TrentinoTrasportiGtfsRealtimeFactory,
         ViaggiatrenoApiService,

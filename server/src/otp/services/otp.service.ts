@@ -1,12 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLClientService } from '../../graphql-client/services/graphql-client.service'
-import { Stop, Stoptime, StoptimeType, StoptimeWithTripInfo } from '../types/otp-types';
-
-// TODO: merge this and OTPService
+import { Stop, Stoptime, StoptimeType, StoptimeWithTripInfo, TripPathInformation } from '../types/otp-types';
 
 /**
- * Service responsible for accessing data through OpenTripPlanner's GraphQL API.
+ * A OTP trip ID with its associated active dates in YYYYMMDD format.
+ */
+interface TripDates {
+    tripId: string
+    activeDates: string[]
+}
+
+/**
+ * Service responsible for accessing OpenTripPlanner data through its GraphQL API.
  * 
  * For documentation regarding the raw GraphQL queries, see https://docs.opentripplanner.org/api/dev-2.x/graphql-gtfs/introduction
  */
@@ -23,21 +29,22 @@ export class OtpService {
     }
 
     /**
-     * Format a {@link Date} object as a YYYYMMDD string based on the system's timezone.
+     * Format a {@link Date} object or UNIX milliseconds timestamp as a YYYYMMDD string.
      * @param date the date to format
      * @returns the formatted date
      */
-    formatAsYYYYMMDDD(date: Date): string {
-        let dateString = date.getFullYear().toString();
-        if(date.getMonth() + 1 >= 10) {
-            dateString += (date.getMonth() + 1).toString();
+    formatAsYYYYMMDDD(date: Date | number): string {
+        const dateObj = typeof date === "object" ? date : new Date(date);
+        let dateString = dateObj.getFullYear().toString();
+        if(dateObj.getMonth() + 1 >= 10) {
+            dateString += (dateObj.getMonth() + 1).toString();
         } else {
-            dateString += `0${date.getMonth() + 1}`;
+            dateString += `0${dateObj.getMonth() + 1}`;
         }
-        if(date.getDate() >= 10) {
-            dateString += date.getDate().toString();
+        if(dateObj.getDate() >= 10) {
+            dateString += dateObj.getDate().toString();
         } else {
-            dateString += `0${date.getDate()}`;
+            dateString += `0${dateObj.getDate()}`;
         }
         return dateString;
     }
@@ -225,5 +232,98 @@ export class OtpService {
         `;
         const { stops } = await this.graphQlClient.makeQuery<{ stops: Stop[] }>(this.OTP_GRAPHQL_URL, query, undefined);
         return stops;
+    }
+
+    /**
+     * Retrieve all trips' pathing information for a given feed that run on the specified service date.
+     * @param feedId the OTP feed ID
+     * @param serviceDate the service date
+     * @returns all of the feed's trips running on the given date
+     */
+    async getTripPathsByFeed(feedId: string, serviceDate: Date): Promise<TripPathInformation[]> {
+        const serviceDateString = this.formatAsYYYYMMDDD(serviceDate);
+        const activeTrips = 
+            (await this.getTripsDatesByFeed(feedId))
+                .filter(td => td.activeDates.includes(serviceDateString))
+                .map(async td => await this.getTripPathInfo(td.tripId, serviceDateString));
+        return Promise.all(activeTrips);
+    }
+
+    /**
+     * Retrieve a trip's departure and arrival times and stop sequence numbers for a specific service date.
+     * @param tripId id of the trip
+     * @param serviceDate date for which to get times, in YYYYMMDD format
+     * @returns the trip's departure and arrival times
+     */
+    private async getTripPathInfo(tripId: string, serviceDate: string): Promise<TripPathInformation> {
+        
+        const query = `
+            query TripDepartureArrivalTimes($tripId: String!, $serviceDate: String!) {
+                trip(id: $tripId) {
+                    departureStoptime(serviceDate: $serviceDate) {
+                        serviceDay
+                        scheduledDeparture
+                    }
+                    arrivalStoptime(serviceDate: $serviceDate) {
+                        scheduledArrival
+                    }
+                    stoptimesForDate(serviceDate: $serviceDate) {
+                        stop {
+                            gtfsId
+                        }
+                        stopPosition
+                    }
+                }
+            }
+        `;
+        const { trip: tripTimes } = await this.graphQlClient.makeQuery<{ 
+            trip: {
+                departureStoptime: {
+                    serviceDay: number
+                    scheduledDeparture: number
+                }
+                arrivalStoptime: {
+                    scheduledArrival: number
+                }
+                stoptimesForDate: {
+                    stop: { 
+                        gtfsId: string 
+                    }
+                    stopPosition: number
+                }[]
+            }
+        }>(this.OTP_GRAPHQL_URL, query, { tripId: tripId, serviceDate: serviceDate });
+
+        const serviceDay = tripTimes.departureStoptime.serviceDay;
+        return {
+            tripId,
+            serviceDate,
+            departureTime: serviceDay + tripTimes.departureStoptime.scheduledDeparture,
+            arrivalTime: serviceDay + tripTimes.arrivalStoptime.scheduledArrival,
+            stops: tripTimes.stoptimesForDate.map(st => {
+                return {
+                    id: st.stop.gtfsId,
+                    sequenceNumber: st.stopPosition
+                };
+            })
+        };
+    }
+
+    /**
+     * Retrieve all trips with their associated active dates for a specific feed.
+     * @param feedId id of the feed
+     * @returns all of `feedId`'s trips and their active dates
+     */
+    private async getTripsDatesByFeed(feedId: string): Promise<TripDates[]> {
+        const query = `
+            query TripsDatesByFeed($feedId: String!) {
+                trips(feeds: [$feedId]) {
+                    tripId: gtfsId
+                    activeDates
+                }
+            }
+        `;
+        const { trips: tripDates } = await this.graphQlClient.makeQuery<{ trips: TripDates[] }>(this.OTP_GRAPHQL_URL, query, { feedId: feedId });
+        return tripDates;
     }
 }

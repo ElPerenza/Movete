@@ -2,11 +2,11 @@ import { create, toBinary } from "@bufbuild/protobuf";
 import { GtfsRealtimeProvider } from "./gtfs-realtime-provider";
 import { FeedEntitySchema, FeedHeader_Incrementality, FeedMessageSchema, TripDescriptor_ScheduleRelationship, TripUpdate_StopTimeEventSchema, TripUpdate_StopTimeUpdate_ScheduleRelationship, TripUpdate_StopTimeUpdateSchema } from "../../generated/gtfs-realtime_pb";
 import { Logger } from "@nestjs/common";
-import { OtpRealtimeService } from "../services/otp-realtime.service";
+import { OtpService } from "../../otp/services/otp.service";
+import { TripPathInformation } from "../../otp/types/otp-types";
 import { StopStatus, TripStatus, ViaggiatrenoApiService, ViaggiatrenoTripInfo } from "../services/viaggiatreno-api.service";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
-import { TripServiceDateInformation } from "../types/otp-types";
 
 export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
 
@@ -16,12 +16,12 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
     private readonly TRIP_SELECTION_PADDING = 600;
 
     // TODO: A lot of shared state between methods in this class. It works and isn't terribly complex, but I'd like a cleaner way of doing things in the future
-    private runningToday?: TripServiceDateInformation[];
+    private runningToday?: TripPathInformation[];
     private readonly trackedTrips: Set<string> = new Set();
     private feed?: Uint8Array;
 
     constructor(
-        private readonly realtimeService: OtpRealtimeService,
+        private readonly otpService: OtpService,
         private readonly vtApiService: ViaggiatrenoApiService,
         private readonly schedulerRegistry: SchedulerRegistry,
         private readonly feedId: string
@@ -105,7 +105,7 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
      * Retrieve the arrival and departure times of trips running on the current date.
      * @returns the arrival and departure times of trips running today
      */
-    async getTripsRunningToday(): Promise<TripServiceDateInformation[]> {
+    async getTripsRunningToday(): Promise<TripPathInformation[]> {
         const start = Date.now();
 
         // TODO: timezones? as long as server is running in Europe/Rome timezone it's fine
@@ -113,10 +113,9 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
         const yesterday = new Date(today);
         yesterday.setDate(today.getDate() - 1);
 
-        const [ tripsToday, tripsYesterday ] = await Promise.all([
-            this.realtimeService.getFeedTripsForDate(this.feedId, today),
-            this.realtimeService.getFeedTripsForDate(this.feedId, yesterday)
-        ]);
+        // TODO: temporarily removed Promise.all to try to avoid running out of sockets. Once socket pool implemented, add back.
+        const tripsToday = await this.otpService.getTripPathsByFeed(this.feedId, today);
+        const tripsYesterday = await this.otpService.getTripPathsByFeed(this.feedId, yesterday);
         const tripTimes = tripsToday.concat(tripsYesterday);
 
         this.logger.log(`[${this.feedId}] Retrieved yesterday's and today's trips departure/arrival times in ${Date.now() - start}ms. ${tripTimes.length} trips total.`);
@@ -128,7 +127,7 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
      * @param trips the trips to include in the feed (IDs)
      * @returns the already encoded feed
      */
-    private async createTripUpdatesFeed(trips: Iterable<TripServiceDateInformation>): Promise<Uint8Array> {
+    private async createTripUpdatesFeed(trips: Iterable<TripPathInformation>): Promise<Uint8Array> {
 
         const realtimeFeed = create(FeedMessageSchema, {
             header: {
@@ -146,13 +145,14 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
             const realtimeInfo = await this.vtApiService.getTripInfo(trainNumber, departureStationId, new Date(trip.departureTime * 1000));
 
             if(!realtimeInfo || !realtimeInfo.lastRecordingTime) {
+                this.logger.log(`[${this.feedId}] Trip ${trip.tripId} has no realtime data`);
                 // no realtime data (either lost signal or trip completed)
                 //this.trackedTrips.delete(tripId);
                 continue;
             }
 
-            //const serviceDateInfo = this.runningToday!.find(times => times.tripId.endsWith(tripId))!;
-
+            // TODO: tracking trips like this means that we retroactively include all trips that circulated that day. Do we drop them after X time?
+            //       It'd be nice to keep them if they don't slow down the data gathering too much (has to comfortably stay under 60s).
             // keep track of trips that have realtime info, so we don't stop considering them if they're late and go out of the window defined in updateFeed()
             //this.trackedTrips.add(tripId);
 
@@ -161,9 +161,10 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
                 .filter(stop => stop.status !== StopStatus.NO_DATA && stop.status !== StopStatus.DIVERTED)
                 .map(stop => {
 
+                    // TODO how do we tackle this?
                     const stopWithSameId = trip.stops.find(s => ("S" + s.id.split(":").at(-1)!.slice(4)) === stop.stopId);
                     if(!stopWithSameId) {
-                        this.logger.log(`Stop with Viaggiatreno ID ${stop.stopId} has no correspondence in OTP for train ${trip.tripId}`);
+                        this.logger.log(`[${this.feedId}] Stop with Viaggiatreno ID ${stop.stopId} has no correspondence in OTP for train ${trip.tripId}`);
                         return;
                     }
 
