@@ -18,6 +18,10 @@ export interface TripServiceDateInformation {
     departureTime: number
     /** Scheduled arrival time in seconds since UNIX epoch. */
     arrivalTime: number
-    /** List of GTFS `stop_sequence` numbers for the trip's stops, in order. */
-    sequenceNumbers: number[]
+    stops: {
+        /** OTP stop ID. */
+        id: string
+        /** GTFS `stop_sequence` number */
+        sequenceNumber: number
+    }[]
 }
