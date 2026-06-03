@@ -54,6 +54,15 @@ export class Dashboard implements OnInit {
             return;
         }
 
+        if (!this.newAlert.stopId || !this.newAlert.title || !this.newAlert.message) {
+            alert("Compila tutti i campi di testo.");
+            return;
+        }
+        if (!this.newAlert.validFrom || !this.newAlert.validUntil) {
+            alert("Inserisci le date di inizio e fine validità.");
+            return;
+        }
+
         const alertToSave: Alert = {
             title: this.newAlert.title!,
             message: this.newAlert.message!,
@@ -68,8 +77,12 @@ export class Dashboard implements OnInit {
             next: (savedAlert) => {
                 this.alerts.unshift(savedAlert); // Aggiunge in cima alla lista
                 this.resetForm();
+                alert("Avviso creato con successo");
             },
-            error: (err) => console.error('Errore salvataggio avviso', err)
+            error: (err) => {
+                console.error('Errore salvataggio avviso', err);
+                alert("Errore dal server: controlla la console");
+            }
         });
     }
 
