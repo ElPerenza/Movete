@@ -78,6 +78,9 @@ export class OtpRealtimeService {
                         scheduledArrival
                     }
                     stoptimesForDate(serviceDate: $serviceDate) {
+                        stop {
+                            gtfsId
+                        }
                         stopPosition
                     }
                 }
@@ -93,6 +96,9 @@ export class OtpRealtimeService {
                     scheduledArrival: number
                 }
                 stoptimesForDate: {
+                    stop: { 
+                        gtfsId: string 
+                    }
                     stopPosition: number
                 }[]
             }
@@ -104,7 +110,21 @@ export class OtpRealtimeService {
             serviceDate,
             departureTime: serviceDay + tripTimes.departureStoptime.scheduledDeparture,
             arrivalTime: serviceDay + tripTimes.arrivalStoptime.scheduledArrival,
-            sequenceNumbers: tripTimes.stoptimesForDate.map(st => st.stopPosition)
+            stops: tripTimes.stoptimesForDate.map(st => {
+                return {
+                    id: st.stop.gtfsId,
+                    sequenceNumber: st.stopPosition
+                };
+            })
         };
+    }
+
+    async getFeedTripsForDate(feedId: string, serviceDate: Date): Promise<TripServiceDateInformation[]> {
+        const serviceDateString = this.formatAsYYYYMMDDD(serviceDate);
+        const activeTrips = 
+            (await this.getTripsDatesByFeed(feedId))
+                .filter(td => td.activeDates.includes(serviceDateString))
+                .map(async td => await this.getTripInfoForServiceDate(td.tripId, serviceDateString));
+        return Promise.all(activeTrips);
     }
 }

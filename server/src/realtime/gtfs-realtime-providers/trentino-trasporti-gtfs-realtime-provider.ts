@@ -169,7 +169,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
                     },
                     stopTimeUpdate: [
                         {
-                            stopSequence: serviceDateInfo.sequenceNumbers[realtimeInfo.lastSequenceDetection],
+                            stopSequence: serviceDateInfo.stops[realtimeInfo.lastSequenceDetection].sequenceNumber,
                             departure: {
                                 delay: realtimeInfo.delay! * 60
                             }
