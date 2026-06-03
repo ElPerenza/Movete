@@ -18,8 +18,8 @@ export class AlertService {
 
     constructor(private http: HttpClient) { }
 
-    getAllAlerts(): Observable<Alert[]> {
-        return this.http.get<Alert[]>(this.baseUrl);
+    getAllAlerts(limit: number = 20): Observable<Alert[]> {
+        return this.http.get<Alert[]>(`${this.baseUrl}?limit=${limit}`);
     }
 
     saveAlert(alert: Alert): Observable<Alert> {

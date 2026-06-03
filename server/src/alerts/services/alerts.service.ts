@@ -8,8 +8,8 @@ import { CreateAlertDto } from '../dto/alert.dto';
 export class AlertsService {
     constructor(@InjectModel(Alert.name) private alertModel: Model<Alert>) { }
 
-    async findAll() {
-        return this.alertModel.find().sort({ createdAt: -1 }).exec();
+    async findAll(limit: number = 20) {
+        return this.alertModel.find().sort({ createdAt: -1 }).limit(limit).exec();
     }
 
     async findActiveByStop(stopId: string) {

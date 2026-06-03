@@ -52,6 +52,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
 
     public activeAlerts: Alert[] = [];
     public isLoadingAlerts: boolean = false;
+    public isAlertsPanelOpen: boolean = false;
 
     //Endipoint backend
     private baseUrl: string = "http://localhost:3000/pois/stop/";
@@ -76,6 +77,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes["stop"] && this.stop) {
+            this.isAlertsPanelOpen = false;
             this.fetchStopTimes(this.stop.id);
             this.loadAlerts();
             if (this.isLoggedIn) {
@@ -136,6 +138,10 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
                 }
             });
         }
+    }
+
+    toggleAlertsPanel(): void {
+        this.isAlertsPanelOpen = !this.isAlertsPanelOpen;
     }
 
 

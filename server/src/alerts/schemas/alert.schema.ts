@@ -27,3 +27,6 @@ export class Alert extends Document {
 }
 
 export const AlertSchema = SchemaFactory.createForClass(Alert);
+
+//in order to fasten data organization
+AlertSchema.index({ createdAt: -1 });

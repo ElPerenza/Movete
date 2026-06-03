@@ -12,7 +12,7 @@ import { AuthService } from "./auth/services/auth.service";
 export class App {
     protected readonly title = "Movete";
 
-    constructor(private authService: AuthService) { }
+    constructor(private authService: AuthService) { console.log("App component built"); }
 
     ngOnInit() {
         /**
@@ -22,6 +22,9 @@ export class App {
          * dipendente provinciale, lascierei qui)
         */
 
-        this.authService.checkInitialSession();
+        this.authService.checkInitialSession().subscribe({
+            next: (res) => console.log("response from /me recieved:", res),
+            error: (err) => console.error("Error from /me:", err)
+        });
     }
 }

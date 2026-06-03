@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
 import { AlertsService } from '../services/alerts.service';
 import { CreateAlertDto } from '../dto/alert.dto';
 
@@ -7,8 +7,9 @@ export class AlertsController {
     constructor(private readonly alertsService: AlertsService) { }
 
     @Get()
-    async getAllAlerts() {
-        return this.alertsService.findAll();
+    async getAllAlerts(@Query('limit') limit?: number) {
+        const parsedLimit = limit ? Number(limit) : 20;
+        return this.alertsService.findAll(parsedLimit);
     }
 
     @Get('stop/:stopId/active')
