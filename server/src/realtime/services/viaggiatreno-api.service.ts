@@ -58,15 +58,15 @@ export class ViaggiatrenoApiService {
     }
 }
 
-enum TripStatus {
+export enum TripStatus {
     NORMAL = 0, CANCELLED = 1, PARTIALLY_CANCELLED = 2, DIVERTED = 3
 }
 
-enum StopStatus {
+export enum StopStatus {
     NO_DATA = 0, REGULAR = 1, DIVERTED = 2, CANCELLED = 3
 }
 
-interface ViaggiatrenoTripInfo {
+export interface ViaggiatrenoTripInfo {
     trainNumber: number
     status: TripStatus
     serviceDate: string

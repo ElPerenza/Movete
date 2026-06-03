@@ -9,14 +9,18 @@ import { GTFS_RT_PROVIDERS } from './provider-tokens';
 import { GtfsRealtimeProvider } from './gtfs-realtime-providers/gtfs-realtime-provider';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ViaggiatrenoApiService } from './services/viaggiatreno-api.service';
+import { ViaggiatrenoGtfsRealtimeFactory } from './services/viaggiatreno-gtfs-realtime-factory';
+
+// TODO: realtime providers can at times run out of available sockets when making requests with fetch() and fail. Need to configure a connection pool to prevent it from happening.
 
 const gtfsRealtimeProviders: Provider<Map<string, GtfsRealtimeProvider>> = {
     provide: GTFS_RT_PROVIDERS,
-    inject: [TrentinoTrasportiGtfsRealtimeFactory],
-    useFactory: (ttRealtimeFactory: TrentinoTrasportiGtfsRealtimeFactory) => {
-        return new Map([
+    inject: [TrentinoTrasportiGtfsRealtimeFactory, ViaggiatrenoGtfsRealtimeFactory],
+    useFactory: (ttRealtimeFactory: TrentinoTrasportiGtfsRealtimeFactory, vtRealtimeFactory: ViaggiatrenoGtfsRealtimeFactory) => {
+        return new Map<string, GtfsRealtimeProvider>([
             ["TrentinoTrasportiUrbano", ttRealtimeFactory.forFeed("TrentinoTrasportiUrbano")],
-            ["TrentinoTrasportiExtraurbano", ttRealtimeFactory.forFeed("TrentinoTrasportiExtraurbano")]
+            ["TrentinoTrasportiExtraurbano", ttRealtimeFactory.forFeed("TrentinoTrasportiExtraurbano")],
+            ["Trenitalia", vtRealtimeFactory.forFeed("Trenitalia")]
         ]);
     }
 };
@@ -29,6 +33,7 @@ const gtfsRealtimeProviders: Provider<Map<string, GtfsRealtimeProvider>> = {
         TrentinoTrasportiApiService,
         TrentinoTrasportiGtfsRealtimeFactory,
         ViaggiatrenoApiService,
+        ViaggiatrenoGtfsRealtimeFactory,
         gtfsRealtimeProviders
     ]
 })
