@@ -34,7 +34,7 @@ export interface Stoptime {
 export interface TripInformation {
     id: string
     headsign: string
-    serviceDay: Date
+    serviceDate: Date
     routeShortName: string
 }
 

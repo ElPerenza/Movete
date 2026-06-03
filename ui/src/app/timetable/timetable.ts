@@ -65,7 +65,7 @@ export class Timetable implements OnChanges {
         this.cdr.detectChanges();
 
         const encodedTripId = encodeURIComponent(time.tripInfo.id);
-        const serviceDateTimestamp = Date.parse(time.tripInfo.serviceDay);
+        const serviceDateTimestamp = Date.parse(time.tripInfo.serviceDate);
 
         this.http.get<Stoptime[]>(`${this.baseUrl}trip/${encodedTripId}/${serviceDateTimestamp}/details`).subscribe({
             next: (data) => {

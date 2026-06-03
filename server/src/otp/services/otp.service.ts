@@ -7,6 +7,8 @@ import { Stop, Stoptime, StoptimeType, StoptimeWithTripInfo } from '../types/otp
 
 /**
  * Service responsible for accessing data through OpenTripPlanner's GraphQL API.
+ * 
+ * For documentation regarding the raw GraphQL queries, see https://docs.opentripplanner.org/api/dev-2.x/graphql-gtfs/introduction
  */
 @Injectable()
 export class OtpService {
@@ -137,7 +139,7 @@ export class OtpService {
                     id: st.trip.gtfsId,
                     headsign: st.headsign === "" ? st.trip.arrivalStoptime.stop.name : st.headsign, // if no headsign, use name of trip destination
                     routeShortName: st.trip.route.shortName,
-                    serviceDay: new Date(st.serviceDay * 1000)
+                    serviceDate: new Date(st.serviceDay * 1000)
                 },
                 stopType: stopType
             }
