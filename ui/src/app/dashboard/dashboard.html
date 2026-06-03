@@ -46,29 +46,56 @@
                     </button>
                 </form>
             </div>
-
-            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Avvisi nel Sistema</h2>
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
+                
+                <div class="flex flex-col xl:flex-row items-start xl:items-center justify-between border-b border-gray-200 pb-4 mb-4 gap-4">
+                    <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        @if (isShowingFiltered) {
+                            <span>Risultati per: <code class="text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{{ searchStopId }}</code></span>
+                            <button (click)="loadAlerts()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded ml-2 transition-colors">Mostra Tutti</button>
+                        } @else {
+                            <span>Tutti gli Avvisi nel Sistema</span>
+                        }
+                    </h2>
+                    
+                    <div class="flex w-full xl:w-auto gap-2">
+                        <input type="text" [(ngModel)]="searchStopId" (keyup.enter)="searchAlertsForStop()" placeholder="Filtra per ID Fermata..." 
+                               class="w-full xl:w-64 p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <button (click)="searchAlertsForStop()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm transition-colors shadow-sm shrink-0">
+                            Filtra
+                        </button>
+                    </div>
+                </div>
                 
                 @if (isLoading) {
-                    <div class="flex justify-center py-10"><div class="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div></div>
+                    <div class="flex justify-center py-12"><div class="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div></div>
                 } @else if (alerts.length === 0) {
-                    <p class="text-gray-500 text-center py-10 italic">Nessun avviso presente nel sistema.</p>
+                    <div class="text-center py-12 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                        <svg class="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p class="font-bold text-gray-600">
+                            {{ isShowingFiltered ? 'Nessun avviso per questa fermata.' : 'Nessun avviso nel sistema.' }}
+                        </p>
+                        <p class="text-sm mt-1 text-gray-400">La situazione è regolare.</p>
+                    </div>
                 } @else {
                     <div class="space-y-3">
                         @for (alert of alerts; track alert._id) {
-                            <div class="flex justify-between items-start p-4 border rounded-lg hover:bg-gray-50 transition-colors" [class.border-l-4]="alert.isActive" [class.border-l-orange-500]="alert.isActive">
+                            <div class="flex justify-between items-start p-4 border border-gray-100 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                                 [class.border-l-4]="alert.isActive" [class.border-l-orange-500]="alert.isActive">
                                 <div>
                                     <div class="flex items-center gap-2">
-                                        <span class="font-bold text-gray-800">{{ alert.title }}</span>
-                                        @if (alert.isActive) { <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Attivo</span> }
+                                        <span class="font-bold text-gray-900">{{ alert.title }}</span>
+                                        @if (alert.isActive) {
+                                            <span class="bg-orange-100 text-orange-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider">In Corso</span>
+                                        }
                                     </div>
-                                    <p class="text-sm text-gray-600 mt-1">{{ alert.message }}</p>
-                                    <div class="text-xs text-gray-400 mt-2 font-mono">
-                                        Fermata: {{ alert.stopId }} | Scade: {{ alert.validUntil | date:'dd/MM/yyyy HH:mm' }}
+                                    <p class="text-sm text-gray-600 mt-2 leading-relaxed">{{ alert.message }}</p>
+                                    <div class="text-xs text-gray-400 mt-3 font-medium flex gap-4">
+                                        <span>Fermata: <code class="bg-gray-100 px-1 py-0.5 rounded text-gray-700">{{ alert.stopId }}</code></span>
+                                        <span>Scadenza: {{ alert.validUntil | date:'dd/MM/yyyy HH:mm' }}</span>
                                     </div>
                                 </div>
-                                <button (click)="deleteAlert(alert._id || $any(alert).id)" class="text-red-500 hover:text-red-700 p-2" title="Elimina">
+                                <button (click)="deleteAlert(alert._id || $any(alert).id)" class="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors shrink-0" title="Elimina">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
                             </div>
@@ -76,7 +103,6 @@
                     </div>
                 }
             </div>
-            
         </div>
     </div>
 </div>

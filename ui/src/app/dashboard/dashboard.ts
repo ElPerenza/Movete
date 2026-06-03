@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertService, Alert } from '../alert/services/alert.service';
@@ -11,7 +11,7 @@ import { AuthService } from '../auth/services/auth.service';
 })
 export class Dashboard implements OnInit {
     public alerts: Alert[] = [];
-    public isLoading = true;
+    public isLoading = false;
 
     // Modello per il nuovo avviso
     public newAlert: Partial<Alert> = {
@@ -23,25 +23,57 @@ export class Dashboard implements OnInit {
         isActive: true
     };
 
+    public searchStopId: string = '';
+    public hasSearched: boolean = false;
+    public isShowingFiltered: boolean = false;
+
     constructor(
         private alertService: AlertService,
-        private authService: AuthService
+        private authService: AuthService,
+        private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit() {
         this.loadAlerts();
     }
 
-    loadAlerts() {
+    searchAlertsForStop() {
+        if (!this.searchStopId.trim()) {
+            this.loadAlerts();
+            return;
+        }
+
         this.isLoading = true;
-        this.alertService.getAllAlerts().subscribe({
+        this.hasSearched = true;
+
+        this.alertService.getActiveAlertsForStop(this.searchStopId.trim()).subscribe({
             next: (data) => {
                 this.alerts = data;
                 this.isLoading = false;
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error('Errore ricerca', err);
+                this.isLoading = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    loadAlerts() {
+        this.isLoading = true;
+        this.isShowingFiltered = false;
+        this.searchStopId = '';
+        this.alertService.getAllAlerts(20).subscribe({
+            next: (data) => {
+                this.alerts = data;
+                this.isLoading = false;
+                this.cdr.detectChanges();
             },
             error: (err) => {
                 console.error('Errore nel caricamento avvisi', err);
                 this.isLoading = false;
+                this.cdr.detectChanges();
             }
         });
     }
