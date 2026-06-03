@@ -25,6 +25,7 @@ export class AuthController {
 
         // Save user's ID in the session (Cookie)
         (request.session as any).userId = user._id;
+        (request.session as any).role = user.role;
 
         return { message: "Login successful" };
     }
@@ -49,7 +50,8 @@ export class AuthController {
         // 200 OK to Angular
         return {
             loggedIn: true,
-            userId: session.userId
+            userId: session.userId,
+            role: session.role
         };
     }
 }
