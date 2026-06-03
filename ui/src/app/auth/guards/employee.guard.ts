@@ -10,14 +10,13 @@ export const employeeGuard: CanActivateFn = (route, state) => {
     // Controlliamo la sessione chiamando il backend
     return authService.checkInitialSession().pipe(
         map(user => {
-            if (user && user.loggedIn) {
-                //TODO: 
-                // check if user role is employee
-                // as of now everybody has access
+            if (user && user.loggedIn && user.role == 'employee') {
                 return true;
             }
 
-            router.navigate(['/login']);
+            console.warn("Access denied: unauthorized user");
+
+            router.navigate(['/']);
             return false;
         })
     );
