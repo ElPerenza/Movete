@@ -1,10 +1,23 @@
-export interface StopTime {
-    headsign: string | null;
-    routeShortName: string | null;
-    tripId: string;
-    scheduledArrival: string; // ISO 8601
-    scheduledDeparture: string; // ISO 8601
-    arrivalDelay: number;
-    departureDelay: number;
-    realtime: boolean;
+export interface Stoptime {
+    stopName: string
+    realtime: boolean
+    scheduledArrival: string // ISO8601
+    scheduledDeparture: string // ISO8601
+    arrivalDelay: number
+    departureDelay: number
+}
+
+export interface TripInformation {
+    id: string
+    headsign: string
+    serviceDay: string // ISO8601
+    routeShortName: string
+}
+
+export type StoptimeType = "ORIGIN" | "INTERMEDIATE" | "DESTINATION"
+
+export interface StoptimeWithTripInfo {
+    stoptime: Stoptime,
+    tripInfo: TripInformation,
+    stopType: StoptimeType
 }
