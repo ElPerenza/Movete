@@ -24,14 +24,14 @@ describe("AuthController", () => {
         expect(controller).toBeDefined();
     });
 
-    describe("register", () => {
-        it("should complete registration and return user", async () => {
+    describe('register', () => {
+        it('should complete registration and return user', async () => {
             const mockUser = { email: "test@test.com" };
             mockAuthService.register.mockResolvedValueOnce(mockUser);
 
             const result = await controller.register({ email: "test@test.com", password: "pass" });
 
-            expect(result).toEqual({ message: "Registration successfully completed", user: mockUser });
+            expect(result).toEqual({ message: "Registration completed successfully", user: mockUser });
             expect(mockAuthService.register).toHaveBeenCalledWith("test@test.com", "pass");
         });
     });

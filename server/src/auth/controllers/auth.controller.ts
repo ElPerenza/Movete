@@ -12,7 +12,7 @@ export class AuthController {
     @Post("register")
     async register(@Body() registerDto: RegisterRequestDto) {
         const user = await this.authService.register(registerDto.email, registerDto.password);
-        return { message: "Registrazione completata con successo", user };
+        return { message: "Registration completed successfully", user };
     }
 
     @Post("login")

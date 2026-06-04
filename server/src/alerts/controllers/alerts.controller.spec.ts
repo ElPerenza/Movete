@@ -23,9 +23,8 @@ describe("AlertsController", () => {
     it("should return all alerts", async () => {
         mockAlertsService.findAll.mockResolvedValue([{ title: "Test Alert" }]);
 
-        // Rimosso il 5 sia dalla chiamata che dall'expect
         const result = await controller.getAllAlerts();
         expect(result).toEqual([{ title: "Test Alert" }]);
-        expect(mockAlertsService.findAll).toHaveBeenCalledWith();
+        expect(mockAlertsService.findAll).toHaveBeenCalledWith(20);
     });
 });
