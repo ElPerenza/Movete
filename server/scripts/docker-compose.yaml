@@ -11,12 +11,13 @@ services:
       -c "
       echo 'Updating package list...' &&
       apt-get update -qy &&
-      echo 'Installing osmosis...' &&
-      apt-get install -qy osmosis &&
-      echo 'Injecting mandatory OSM v0.6 metadata into XML files...' &&
-      echo 'Compiling car parks into binary PBF...' &&
-      osmosis --read-xml file='trentino_car_parks.osm' --write-pbf file='trentino_car_parks.pbf' &&
-      echo 'Compiling bike parks into binary PBF...' &&
-      osmosis --read-xml file='trentino_bike_parks.osm' --write-pbf file='trentino_bike_parks.pbf' &&
-      osmosis --read-xml file='trentino_zone_parcheggio.osm' --write-pbf file='trentino_zone_parcheggio.pbf' &&
-      echo 'Conversion complete! PBF files created successfully.'"
+      echo 'Installing osmium-tool...' &&
+      apt-get install -qy osmium-tool &&
+      
+      echo 'Compiling unified OSM XML directly into binary PBF...' &&
+      osmium cat trentino_parkings.osm -o trentino_parkings.pbf --overwrite &&
+      
+      echo 'Stripping background parking nodes from TN.pbf...' &&
+      osmium tags-filter TN.pbf nwr/amenity=parking,bicycle_parking --invert-match -o TN_cleaned.pbf --overwrite
+      
+      echo 'Conversion complete! trentino_parkings.pbf and TN_cleaned.pbf created successfully.'"
