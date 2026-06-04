@@ -242,11 +242,14 @@ export class OtpService {
      */
     async getTripPathsByFeed(feedId: string, serviceDate: Date): Promise<TripPathInformation[]> {
         const serviceDateString = this.formatAsYYYYMMDDD(serviceDate);
-        const activeTrips = 
-            (await this.getTripsDatesByFeed(feedId))
-                .filter(td => td.activeDates.includes(serviceDateString))
-                .map(async td => await this.getTripPathInfo(td.tripId, serviceDateString));
-        return Promise.all(activeTrips);
+        const activeTrips: TripPathInformation[] = [];
+        // not using Array.map and Promise.all as that seems to run the system out of available request sockets at times
+        for(const td of await this.getTripsDatesByFeed(feedId)) {
+            if(td.activeDates.includes(serviceDateString)) {
+                activeTrips.push(await this.getTripPathInfo(td.tripId, serviceDateString));
+            }
+        }
+        return activeTrips;
     }
 
     /**

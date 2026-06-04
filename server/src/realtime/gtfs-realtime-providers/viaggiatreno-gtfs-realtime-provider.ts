@@ -4,9 +4,11 @@ import { FeedEntitySchema, FeedHeader_Incrementality, FeedMessageSchema, TripDes
 import { Logger } from "@nestjs/common";
 import { OtpService } from "../../otp/services/otp.service";
 import { TripPathInformation } from "../../otp/types/otp-types";
-import { StopStatus, TripStatus, ViaggiatrenoApiService, ViaggiatrenoTripInfo } from "../services/viaggiatreno-api.service";
+import { ViaggiatrenoApiService } from "../services/viaggiatreno-api.service";
+import { StopStatus, TripStatus } from "../types/viaggiatreno-api-types";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
+import trentinoStops from "../trentino_stops.json";
 
 export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
 
@@ -17,7 +19,6 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
 
     // TODO: A lot of shared state between methods in this class. It works and isn't terribly complex, but I'd like a cleaner way of doing things in the future
     private runningToday?: TripPathInformation[];
-    private readonly trackedTrips: Set<string> = new Set();
     private feed?: Uint8Array;
 
     constructor(
@@ -92,8 +93,7 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
                 // consider only trips that should be currently running (with some padding)
                 return now >= (tripInfo.departureTime - this.TRIP_SELECTION_PADDING) && 
                         now <= (tripInfo.arrivalTime + this.TRIP_SELECTION_PADDING);
-            })
-            //.map(tripInfo => tripInfo.tripId.substring(tripInfo.tripId.indexOf(":") + 1)); // remove feedId (OTP gtfs IDs -> feedId:tripId)
+            });
         
         //const trips = new Set(tripsCurrentlyRunning).union(this.trackedTrips);
         this.feed = await this.createTripUpdatesFeed(tripsCurrentlyRunning);
@@ -113,13 +113,34 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
         const yesterday = new Date(today);
         yesterday.setDate(today.getDate() - 1);
 
-        // TODO: temporarily removed Promise.all to try to avoid running out of sockets. Once socket pool implemented, add back.
-        const tripsToday = await this.otpService.getTripPathsByFeed(this.feedId, today);
-        const tripsYesterday = await this.otpService.getTripPathsByFeed(this.feedId, yesterday);
-        const tripTimes = tripsToday.concat(tripsYesterday);
+        const [ tripsToday, tripsYesterday ] = await Promise.all([
+            await this.otpService.getTripPathsByFeed(this.feedId, today),
+            await this.otpService.getTripPathsByFeed(this.feedId, yesterday)
+        ]);
+
+        // limit returned trips to only ones that serve stations in Trentino (and stations just outside that have connecting TT bus services)
+        // This stays like this as long as this app doesn't expand its scope beyond Trentino
+        const trentinoStopIds = trentinoStops.map(s => s.id);
+        const tripTimes = tripsToday.concat(tripsYesterday).filter(trip => {
+            for(const stop of trip.stops) {
+                if(trentinoStopIds.includes(Number(stop.id.split(":").at(-1)!))) {
+                    return true;
+                }
+            }
+            return false;
+        });
 
         this.logger.log(`[${this.feedId}] Retrieved yesterday's and today's trips departure/arrival times in ${Date.now() - start}ms. ${tripTimes.length} trips total.`);
         return tripTimes;
+    }
+
+    /**
+     * Convert a stop ID from the new format (`8300*****`) to the old one (`S*****`).
+     * @param id the ID to convert
+     * @returnsthe converted ID
+     */
+    private newToOldIdFormat(id: string): string {
+        return "S" + id.slice(4);
     }
 
     /**
@@ -141,12 +162,11 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
 
             const gtfsTripId = trip.tripId.substring(trip.tripId.indexOf(":") + 1);
             const trainNumber = trip.tripId.split("-")[1]; // ID format (19336 is the train number): <feedId>:IT::VehicleJourney:railTRENITALIA:10083_0_1-19336-44B5-0083_1-19336-44B5-0083
-            const departureStationId = "S" + trip.stops[0].id.split(":").at(-1)!.slice(4);
+            const departureStationId = this.newToOldIdFormat(trip.stops[0].id.split(":").at(-1)!);
             const realtimeInfo = await this.vtApiService.getTripInfo(trainNumber, departureStationId, new Date(trip.departureTime * 1000));
 
             if(!realtimeInfo || !realtimeInfo.lastRecordingTime) {
-                this.logger.log(`[${this.feedId}] Trip ${trip.tripId} has no realtime data`);
-                // no realtime data (either lost signal or trip completed)
+                // no realtime data (either trip completed or not started yet/data lost)
                 //this.trackedTrips.delete(tripId);
                 continue;
             }
@@ -157,15 +177,16 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
             //this.trackedTrips.add(tripId);
 
             // TODO: add DIVERTED support
+            // create stopUpdates for all stops with realtime data
             const stopUpdates = realtimeInfo.stops
                 .filter(stop => stop.status !== StopStatus.NO_DATA && stop.status !== StopStatus.DIVERTED)
                 .map(stop => {
 
-                    // TODO how do we tackle this?
-                    const stopWithSameId = trip.stops.find(s => ("S" + s.id.split(":").at(-1)!.slice(4)) === stop.stopId);
+                    // TODO how do we tackle this? Some stops have different IDs in NeTEx and Viaggiatreno data. Need some way to fix this rift.
+                    const stopWithSameId = trip.stops.find(s => this.newToOldIdFormat(s.id.split(":").at(-1)!) === stop.stopId);
                     if(!stopWithSameId) {
-                        this.logger.log(`[${this.feedId}] Stop with Viaggiatreno ID ${stop.stopId} has no correspondence in OTP for train ${trip.tripId}`);
-                        return;
+                        this.logger.warn(`[${this.feedId}] Stop with Viaggiatreno ID ${stop.stopId} has no correspondence in OTP for train ${trip.tripId}`);
+                        return; // we ignore these stops as we wouldn't know where they go in the sequence
                     }
 
                     const stopUpdate = create(TripUpdate_StopTimeUpdateSchema, {
@@ -199,8 +220,6 @@ export class ViaggiatrenoGtfsRealtimeProvider implements GtfsRealtimeProvider {
                 }
             }));
         }
-
-        this.logger.log(`[${this.feedId}] The Realtime feed contains ${realtimeFeed.entity.length} tripUpdates.`);
 
         return toBinary(FeedMessageSchema, realtimeFeed);
     }
