@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AlertsService } from './alerts.service';
-import { getModelToken } from '@nestjs/mongoose';
-import { Alert } from '../schemas/alert.schema';
-import { Types } from 'mongoose';
+import { Test, TestingModule } from "@nestjs/testing";
+import { AlertsService } from "./alerts.service";
+import { getModelToken } from "@nestjs/mongoose";
+import { Alert } from "../schemas/alert.schema";
+import { Types } from "mongoose";
 
-describe('AlertsService', () => {
+describe("AlertsService", () => {
     let service: AlertsService;
 
     const mockAlertModel = {
@@ -15,12 +15,12 @@ describe('AlertsService', () => {
         findByIdAndUpdate: jest.fn().mockReturnThis(),
         findByIdAndDelete: jest.fn().mockReturnThis(),
         // Mock per il costruttore (new this.alertModel)
-        create: jest.fn(),
+        create: jest.fn()
     };
 
     // Usiamo una factory per il costruttore del modello Mongoose
     class MockAlertModel {
-        constructor(private data: any) { }
+        constructor(private data: any) {}
         save = jest.fn().mockResolvedValue(this.data);
     }
 
@@ -30,20 +30,20 @@ describe('AlertsService', () => {
                 AlertsService,
                 {
                     provide: getModelToken(Alert.name),
-                    useValue: { ...mockAlertModel, ...MockAlertModel }, // Uniamo mock metodi statici e costruttore
-                },
-            ],
+                    useValue: { ...mockAlertModel, ...MockAlertModel } // Uniamo mock metodi statici e costruttore
+                }
+            ]
         }).compile();
 
         service = module.get<AlertsService>(AlertsService);
     });
 
-    it('dovrebbe essere definito', () => {
+    it("should be defined", () => {
         expect(service).toBeDefined();
     });
 
-    it('findAll dovrebbe ritornare una lista di alert senza limite', async () => {
-        const mockAlerts = [{ title: 'Allerta 1' }];
+    it("findAll should return a list of alert without limits", async () => {
+        const mockAlerts = [{ title: "Allerta 1" }];
         mockAlertModel.exec.mockResolvedValueOnce(mockAlerts);
 
         const result = await service.findAll(); // Rimosso il 10
@@ -53,13 +53,13 @@ describe('AlertsService', () => {
         // Rimosso l'expect su limit
     });
 
-    it('findActiveByStop dovrebbe cercare alert validi e attivi', async () => {
-        mockAlertModel.exec.mockResolvedValueOnce([{ title: 'Active Alert' }]);
+    it("findActiveByStop should search valid and active alerts", async () => {
+        mockAlertModel.exec.mockResolvedValueOnce([{ title: "Active Alert" }]);
 
-        await service.findActiveByStop('stop123');
+        await service.findActiveByStop("stop123");
 
         expect(mockAlertModel.find).toHaveBeenCalledWith({
-            stopId: 'stop123',
+            stopId: "stop123",
             isActive: true,
             validFrom: { $lte: expect.any(Date) }, // Verifica che passi una data valida
             validUntil: { $gte: expect.any(Date) }
