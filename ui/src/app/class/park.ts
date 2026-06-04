@@ -12,8 +12,9 @@ export class Park {
     location: Point;
     parkType: ParkType;
     maxCapacity: number;
+    currentCapacity: number;
 
-    constructor(id: string, otpId: string, trentinoApiId: string, name: string, location: Point, parkType: ParkType, maxCapacity: number){
+    constructor(id: string, otpId: string, trentinoApiId: string, name: string, location: Point, parkType: ParkType, maxCapacity: number, currentCapacity: number){
             this.id = id;
             this.otpId = otpId;
             this.trentinoApiId = trentinoApiId;
@@ -21,6 +22,7 @@ export class Park {
             this.location = location;
             this.parkType = parkType;
             this.maxCapacity = maxCapacity;
+            this.currentCapacity = currentCapacity;
         }
 
 }

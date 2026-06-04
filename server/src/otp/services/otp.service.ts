@@ -292,6 +292,7 @@ export class OtpService {
                 },
                 parkType: ParkType.CAR, // Explicitly set based on this method context
                 maxCapacity: rawPark.maxCapacity ?? null, // Fallback safely if null
+                currentCapacity: null
                 };
             });
         } catch (error) {
@@ -337,6 +338,7 @@ export class OtpService {
                 },
                 parkType: ParkType.BIKE, // Explicitly set based on this method context
                 maxCapacity: rawPark.maxCapacity ?? null, // Fallback safely if null
+                currentCapacity: null
                 };
             });
         } catch (error) {

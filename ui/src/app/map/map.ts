@@ -24,6 +24,8 @@ export class Map implements AfterViewInit, OnInit {
     private map!: L.Map;
     private stopsLayerMarkerGroup: L.LayerGroup = L.layerGroup();
     private parksLayerMarkerGroup: L.LayerGroup = L.layerGroup();
+    private parkMarkersMap: { [id: string]: L.Marker } = {};
+    private stopMarkersMap: { [id: string]: L.Marker } = {};
     private _pathComponent!: Path;
     @ViewChild(Path) set pathComponent(content: Path) {
         if (content) {
@@ -221,6 +223,27 @@ export class Map implements AfterViewInit, OnInit {
         
     }
     
+    /**
+     * Helper method to generate custom HTML icons for transport STOPS.
+     */
+    private createStopIcon(isSelected: boolean): L.DivIcon {
+        let markerClasses = "flex items-center justify-center rounded-full border-2 text-white font-bold transition-all duration-200 shadow-md";
+        
+        if (isSelected) {
+            // Highlighted Stop state: Emerald Green / Cyan pop
+            markerClasses += " bg-emerald-500 border-emerald-200 w-9 h-9 text-base scale-110 z-[1000]";
+        } else {
+            // Default Stop state: Classic Blue circle
+            markerClasses += " bg-blue-600 border-blue-400 w-7 h-7 text-xs";
+        }
+
+        return L.divIcon({
+            html: `<div class="${markerClasses}">S</div>`, // Displays an 'S' for Stop
+            className: '', 
+            iconSize: isSelected ? [36, 36] : [28, 28],
+            iconAnchor: isSelected ? [18, 18] : [14, 14]
+        });
+    }
 
     /**
      * Add all the stops to the markerLayer, and displays it on the map
@@ -232,7 +255,13 @@ export class Map implements AfterViewInit, OnInit {
         this.currentStops = stops;
 
         stops.forEach(stop => {
-            const marker = L.marker([stop.location.coordinates[1], stop.location.coordinates[0]]);
+            const isSelected = this.selectedStopId === stop.id;
+            const marker = L.marker(
+                [stop.location.coordinates[1], stop.location.coordinates[0]], 
+                { icon: this.createStopIcon(isSelected) }
+            );
+
+            this.stopMarkersMap[stop.id] = marker;
 
             marker.on('click', () => {
                 this.selectStop(stop);
@@ -249,10 +278,21 @@ export class Map implements AfterViewInit, OnInit {
      * @param stop, the stop to visualize
      */
     public selectStop(stop: Stop): void {
+        if (this.selectedStopId && this.stopMarkersMap[this.selectedStopId]) {
+            const previousMarker = this.stopMarkersMap[this.selectedStopId];
+            previousMarker.setIcon(this.createStopIcon(false));
+            previousMarker.setZIndexOffset(0);
+        }
+
         if (this.selectedStopId === stop.id) {
             // Deselect if clicking the same stop
             this.selectedStopId = null;
         } else {
+            if (this.stopMarkersMap[stop.id]) {
+                const currentMarker = this.stopMarkersMap[stop.id];
+                currentMarker.setIcon(this.createStopIcon(true));
+                currentMarker.setZIndexOffset(1000);
+            }
             // Select and fetch data
             this.selectedStopId = stop.id;
             this.panning = true;
@@ -269,6 +309,30 @@ export class Map implements AfterViewInit, OnInit {
     }
 
     /**
+     * Helper method to generate custom HTML 'P' markers for parking spots.
+     * @param isSelected whether this specific park marker is highlighted
+     */
+    private createParkIcon(isSelected: boolean): L.DivIcon {
+        // Base tailwind styling classes for the marker circle container
+        let markerClasses = "flex items-center justify-center rounded-full border-2 text-white font-bold transition-all duration-200 shadow-md";
+        
+        if (isSelected) {
+            // Selected/Highlighted state: Larger, distinct color, active scaling pulse
+            markerClasses += " bg-amber-500 border-amber-200 w-9 h-9 text-base scale-110 z-[1000]";
+        } else {
+            // Default unselected state: Dark grey/indigo color to contrast against public transport stops
+            markerClasses += " bg-slate-700 border-slate-400 w-7 h-7 text-xs";
+        }
+        return L.divIcon({
+            html: `<div class="${markerClasses}">P</div>`,
+            className: 'custom-park-marker', // Clears Leaflet's default white background box styling
+            iconSize: isSelected ? [36, 36] : [28, 28],
+            iconAnchor: isSelected ? [18, 18] : [14, 14] // Centers anchor directly in the middle of the circle
+        });
+
+    }
+
+    /**
      * Add all the parks to the markerLayer, and displays it on the map
      * @param parks, the list of park that need to be displayed
      */
@@ -278,8 +342,12 @@ export class Map implements AfterViewInit, OnInit {
         this.currentParks = parks;
 
         parks.forEach(park => {
-            const marker = L.marker([park.location.coordinates[1], park.location.coordinates[0]]);
-
+            const isSelected = this.selcetedParkId === park.id;
+            const marker = L.marker(
+                [park.location.coordinates[1], park.location.coordinates[0]], 
+                { icon: this.createParkIcon(isSelected) }
+            );
+            this.parkMarkersMap[park.id] = marker;
             marker.on('click', () => {
                 this.selectPark(park);
                 this.showSidebar = true;
@@ -296,12 +364,24 @@ export class Map implements AfterViewInit, OnInit {
      * @param park, the park to visualize
      */
     public selectPark(park: Park): void {
+        if (this.selcetedParkId && this.parkMarkersMap[this.selcetedParkId]) {
+            const previousMarker = this.parkMarkersMap[this.selcetedParkId];
+            previousMarker.setIcon(this.createParkIcon(false));
+            previousMarker.setZIndexOffset(0);
+        }
+
         if (this.selcetedParkId === park.id) {
             // Deselect if clicking the same park
             this.selcetedParkId = null;
         } else {
             // Select and fetch data
             this.selcetedParkId = park.id;
+            if (this.parkMarkersMap[park.id]) {
+                const currentMarker = this.parkMarkersMap[park.id];
+                currentMarker.setIcon(this.createParkIcon(true));
+                currentMarker.setZIndexOffset(1000); 
+            }
+
             this.panning = true;
             this.map.panTo([park.location.coordinates[1], park.location.coordinates[0]]);
             const targetElement = document.getElementById(`park-card-${park.id}`);
@@ -313,6 +393,7 @@ export class Map implements AfterViewInit, OnInit {
                 });
             }
         }
+        this.cdr.detectChanges();
     }
 
     /**

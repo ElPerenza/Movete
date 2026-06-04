@@ -34,6 +34,9 @@ export class ParkDto {
     @Expose()
     maxCapacity: number;
 
+    @Expose()
+    currentCapacity: number;
+
 }
 
 export class CreateParkDto extends OmitType(ParkDto, ["id"]) {}

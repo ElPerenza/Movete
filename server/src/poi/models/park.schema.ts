@@ -1,6 +1,7 @@
 import { Prop, raw, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument } from "mongoose";
 import { Point } from "../../common/point";
+import { Optional } from "@nestjs/common";
 
 
 export enum ParkType{
@@ -31,6 +32,8 @@ export class Park {
 
     @Prop()
     maxCapacity: number;
+    
+    currentCapacity: number | null;
 
 }
 

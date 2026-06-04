@@ -7,6 +7,7 @@ import { SearchParkRequestDto } from "../dto/search-park-request.dto";
 import { ConfigService } from "@nestjs/config";
 import { OtpService } from "../../otp/services/otp.service";
 import { Point } from "../../common/point";
+import { throwError } from "rxjs";
 
 @Injectable()
 export class ParkService implements OnApplicationBootstrap {
@@ -79,6 +80,39 @@ export class ParkService implements OnApplicationBootstrap {
         return this.parkModel.findByIdAndDelete(id).exec();
     }
  
+
+    /**
+     * Extracts [longitude, latitude] coordinates from a WKT string like "POINT(11.113621 46.0702)"
+     */
+    private parseWktPoint(wkt: string): [number, number] {
+        const match = wkt.match(/POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/i);
+        if (match) {
+            const lng = parseFloat(match[1]);
+            const lat = parseFloat(match[2]);
+            return [lng, lat];
+        }
+        else return [0, 0];
+    }
+
+    /**
+     * Geospatial calculation using Haversine Formula
+     */
+    private getDistanceInMeters(coord1: [number, number], coord2: [number, number]): number {
+        const R = 6371000; // Earth's radius in meters
+        const lat1 = (coord1[1] * Math.PI) / 180;
+        const lat2 = (coord2[1] * Math.PI) / 180;
+        const deltaLat = ((coord2[1] - coord1[1]) * Math.PI) / 180;
+        const deltaLng = ((coord2[0] - coord1[0]) * Math.PI) / 180;
+
+        const a =
+            Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+            Math.cos(lat1) * Math.cos(lat2) *
+            Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+        
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
     /**
      * Given the request data, it search in the database with that filters.
      * If request is completily empty it return all parks.
@@ -104,8 +138,51 @@ export class ParkService implements OnApplicationBootstrap {
         if(parkTypes != null && parkTypes.length > 0) {
             query.where('parkType').in(parkTypes);
         }
+        const dbParks: ParkDocument[] = await query.exec();
 
-        return query.exec();
+        let externalParks: any[] = [];
+        try {
+            const response = await fetch('https://parcheggi.comune.trento.it/static/services/registry_parks.json');
+            if (response.ok) {
+                const data = await response.json();
+                externalParks = Array.isArray(data) ? data : (data.parks || []);
+            }
+            this.logger.log(externalParks);
+        } catch (error) {
+            this.logger.error(`Failed to fetch external parks: ${error}`);
+            // Fallback gracefully to standard database records if target endpoint fails
+            return dbParks;
+        }
+        externalParks.forEach(externalPark => {
+            var exist = false;
+            const externalCoords: [number, number] = this.parseWktPoint(externalPark.geom);
+            var currentPark  = new this.parkModel();
+            dbParks.forEach(park => {
+                if (this.getDistanceInMeters(park.location.coordinates, externalCoords) <= 100){
+                    exist = true
+                    currentPark = park;
+                    return ;
+                }
+            })
+
+            if (exist){
+                currentPark.trentinoApiId = externalPark.id;
+                currentPark.currentCapacity = externalPark.freeslots;
+            } else {
+                currentPark.otpId = ""
+                currentPark.trentinoApiId = externalPark.id;
+                currentPark.name = externalPark.name;
+                currentPark.location.type = "Point";
+                currentPark.location.coordinates = externalCoords;
+                currentPark.parkType = externalPark.type !== "park" ? externalPark.type : "car";
+                currentPark.maxCapacity = externalPark.capacity;
+                currentPark.currentCapacity = externalPark.freeslots;
+            }
+            if(currentPark.parkType in request.parkTypes){
+                dbParks.push(currentPark);
+            }
+        });
+        return dbParks;
     };
     
     /**
