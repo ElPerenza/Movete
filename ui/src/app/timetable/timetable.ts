@@ -1,8 +1,8 @@
 import { Component, Input, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Stop } from '../class/stop';
-import { Stoptime, StoptimeWithTripInfo } from '../class/stop-time';
+import { Stoptime, StoptimeWithTripInfo, TripInformation } from '../class/stop-time';
 
 /**
  * Component for displaying transport timetables for a specific stop.
@@ -11,7 +11,7 @@ import { Stoptime, StoptimeWithTripInfo } from '../class/stop-time';
  */
 @Component({
     selector: 'app-timetable',
-    imports: [DatePipe, DecimalPipe],
+    imports: [DatePipe],
     templateUrl: './timetable.html'
 })
 export class Timetable implements OnChanges {
@@ -22,7 +22,7 @@ export class Timetable implements OnChanges {
     public timesError: string | null = null;
 
     public isModalOpen: boolean = false;
-    public selectedTripHeadsign: string = '';
+    public selectedTrip?: TripInformation = undefined;
     public tripDetails: Stoptime[] = [];
     public isLoadingTrip: boolean = false;
 
@@ -59,7 +59,7 @@ export class Timetable implements OnChanges {
 
     public openTripDetails(time: StoptimeWithTripInfo): void {
         this.isModalOpen = true;
-        this.selectedTripHeadsign = time.tripInfo.headsign || 'Sconosciuta';
+        this.selectedTrip = time.tripInfo;
         this.isLoadingTrip = true;
         this.tripDetails = [];
         this.cdr.detectChanges();
@@ -83,12 +83,13 @@ export class Timetable implements OnChanges {
 
     protected isUpcomingStop(stop: Stoptime, allStops: Stoptime[]): boolean {
         const realtimeStopIndex = allStops.findIndex(s => s.realtime);
-        if(realtimeStopIndex === -1) {
+        if(realtimeStopIndex === -1 || this.selectedTrip?.id.startsWith("Trenitalia")) { // hack to prevent Trenitalia trips from breaking visulization, will need to go once vehicle positions are implemented
             const now = Date.now();
             const stopTime = Date.parse(stop.scheduledDeparture) + (stop.departureDelay * 1000);
             return stopTime - now > 0;
         } else {
-            const delay = allStops.at(-1)!.departureDelay; // workaround only for TT until vehicle positions get implemented (will probably break once Trenitalia realtime data gets added)
+            // workaround only for TT until vehicle positions get implemented
+            const delay = allStops.at(-1)!.departureDelay;
             if(delay <= 0) {
                 return allStops.findIndex(s => s === stop) >= realtimeStopIndex;
             } else {

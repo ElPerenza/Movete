@@ -84,7 +84,7 @@
             <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <div>
                     <h3 class="font-bold text-gray-800">Percorso Completo</h3>
-                    <p class="text-xs text-blue-600 font-semibold uppercase">Direzione: {{ selectedTripHeadsign }}</p>
+                    <p class="text-xs text-blue-600 font-semibold uppercase">Direzione: {{ selectedTrip?.headsign ?? "Sconosciuta" }}</p>
                 </div>
                 <button (click)="closeModal()" class="text-gray-400 hover:text-gray-800 text-2xl px-2">&times;</button>
             </div>
