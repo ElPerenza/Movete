@@ -90,11 +90,7 @@ export class Timetable implements OnChanges {
         } else {
             // workaround only for TT until vehicle positions get implemented
             const delay = allStops.at(-1)!.departureDelay;
-            if(delay <= 0) {
-                return allStops.findIndex(s => s === stop) >= realtimeStopIndex;
-            } else {
-                return allStops.findIndex(s => s === stop) > realtimeStopIndex;
-            }
+            return allStops.findIndex(s => s === stop) >= realtimeStopIndex;
         }
     }
 
