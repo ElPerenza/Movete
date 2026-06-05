@@ -49,7 +49,7 @@
 
     <div>
         <h4 class="font-bold text-gray-800 mb-2 flex items-center justify-between">
-            Prossime Partenze
+            Prossime Corse
             @if (isLoadingTimes) {
                 <span class="text-xs text-blue-500 animate-pulse">Caricamento...</span>
             }
@@ -60,34 +60,55 @@
         } @else if (!isLoadingTimes && currentStopTimes.length === 0) {
             <p class="text-gray-500 text-xs italic">Nessuna corsa prevista a breve.</p>
         } @else {
-            <div class="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
-                @for (time of currentStopTimes; track time.tripId) {
+            <div class="space-y-2 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
+                
+                @for (time of currentStopTimes; track time.tripInfo.id) {
+
+                    <!-- Key data displayed per departure -->
                     <div (click)="openTripDetails(time)" class="flex flex-col p-2 bg-gray-50 hover:bg-blue-100 rounded border border-gray-100 transition-colors cursor-pointer">
+
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2 overflow-hidden">
                                 <span class="bg-blue-600 text-white text-xs font-bold w-7 h-7 flex items-center justify-center rounded-md shrink-0 shadow-sm">
-                                    {{ time.routeShortName || '-' }}
+                                    {{ time.tripInfo.routeShortName || '-' }}
                                 </span>
                                 <span class="font-medium text-gray-800 truncate text-xs">
-                                    {{ time.headsign || 'Sconosciuta' }}
+                                    {{ time.tripInfo.headsign || 'Sconosciuta' }}
                                 </span>
                             </div>
                             <span class="font-bold text-gray-900 text-sm ml-2">
-                                {{ time.scheduledDeparture | date:'HH:mm' }}
+                                {{ time.stoptime.scheduledDeparture | date:'HH:mm' }}
                             </span>
                         </div>
 
-                        <div class="flex justify-end">
-                            @if (time.realtime) {
-                                @if (time.departureDelay === 0) {
-                                    <span class="font-bold text-green-500 text-sm ml-2">In orario</span>
-                                } @else if (time.departureDelay < 0) {
-                                    <span class="font-bold text-purple-500 text-sm ml-2">{{ time.departureDelay / 60 }} min</span>
+                        <div class="flex items-center justify-between mt-2">
+
+                            @if (time.stopType === "ORIGIN") {
+                                <span class="font-semibold text-sm text-yellow-600">Parte da qui</span>
+                            } @else if(time.stopType === "DESTINATION") {
+                                <span class="font-semibold text-sm text-yellow-600">Termina qui</span>
+                            } @else {
+                                <span></span> <!-- Empty element to preserve flex justify-between alignment -->
+                            }
+
+                            @if (time.stoptime.realtime) {
+                                @if (time.stoptime.departureDelay === 0) {
+                                    <span class="font-bold text-green-500 text-sm ml-2">
+                                        In orario
+                                    </span>
+                                } @else if (time.stoptime.departureDelay < 0) {
+                                    <span class="font-bold text-purple-500 text-sm ml-2">
+                                        {{ time.stoptime.departureDelay / 60 }} min
+                                    </span>
                                 } @else {
-                                    <span class="font-bold text-red-500 text-sm ml-2">+{{ time.departureDelay / 60 }} min</span>
+                                    <span class="font-bold text-red-500 text-sm ml-2">
+                                        +{{ time.stoptime.departureDelay / 60 }} min
+                                    </span>
                                 }
                             } @else {
-                                <span class="font-light text-gray-400 text-sm ml-2">Nessun dato in tempo reale</span>
+                                <span class="font-light text-gray-400 text-sm ml-2">
+                                    Nessun dato in tempo reale
+                                </span>
                             }
                         </div>
                     </div>
@@ -116,7 +137,7 @@
             <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <div>
                     <h3 class="font-bold text-gray-800">Percorso Completo</h3>
-                    <p class="text-xs text-blue-600 font-semibold uppercase">Direzione: {{ selectedTripHeadsign }}</p>
+                    <p class="text-xs text-blue-600 font-semibold uppercase">Direzione: {{ selectedTrip?.headsign ?? "Sconosciuta" }}</p>
                 </div>
                 <button (click)="closeModal()" class="text-gray-400 hover:text-gray-800 text-2xl px-2">&times;</button>
             </div>
@@ -140,16 +161,24 @@
                                 <div class="flex justify-between items-center gap-4">
                                     <span class="text-sm font-medium text-gray-700 leading-tight">{{ step.stopName }}</span>
                                     <div>
+
                                         @if (step.realtime) {
-                                            @if (step.delay === 0) {
-                                                <span class="font-bold text-green-500 text-sm">In orario</span>
-                                            } @else if (step.delay < 0) {
-                                                <span class="font-bold text-purple-500 text-sm">{{ step.delay / 60 }} min</span>
+                                            @if (step.departureDelay === 0) {
+                                                <span class="font-bold text-green-500 text-sm">
+                                                    In orario
+                                                </span>
+                                            } @else if (step.departureDelay < 0) {
+                                                <span class="font-bold text-purple-500 text-sm">
+                                                    {{ step.departureDelay / 60 }} min
+                                                </span>
                                             } @else {
-                                                <span class="font-bold text-red-500 text-sm">+{{ step.delay / 60 }} min</span>
+                                                <span class="font-bold text-red-500 text-sm">
+                                                    +{{ step.departureDelay / 60 }} min
+                                                </span>
                                             }
                                         }
-                                        <span class="mr-2 text-sm font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded shrink-0 ml-2">
+
+                                        <span class="mr-2 text-sm font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded shrink-0">
                                             {{ step.scheduledArrival | date:'HH:mm' }}
                                         </span>
                                     </div>

@@ -3,8 +3,13 @@
 *.rest
 
 # OpenTripPlanner
+<<<<<<< HEAD
 /otp/data/
 otp/*.jar
+=======
+/otp/data
+otp-shaded-*.jar
+>>>>>>> 6830432f9a670f564a654d85eb4e17395e0ee76a
 /otp/graph.obj
 /otp/streetGraph.obj
 otp-server/
@@ -13,5 +18,8 @@ otp-server/
 /scripts/
 .env
 docker-compose.yml
+<<<<<<< HEAD
 otp/*.pbf
 otp/*.zip
+=======
+>>>>>>> 6830432f9a670f564a654d85eb4e17395e0ee76a
