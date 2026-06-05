@@ -23,7 +23,6 @@ export class AuthController {
             throw new UnauthorizedException("Invalid credentials");
         }
 
-        // Save user's ID in the session (Cookie)
         (request.session as any).userId = user._id;
         (request.session as any).role = user.role;
 
