@@ -4,6 +4,8 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { PoiModule } from "./poi/poi.module";
+import { RealtimeModule } from './realtime/realtime.module';
+import { ScheduleModule } from "@nestjs/schedule";
 import { PathModule } from './path/path.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from "./users/users.module";
@@ -13,6 +15,7 @@ import { AlertsModule } from "./alerts/alerts.module";
 @Module({
     imports: [
         ConfigModule.forRoot(),
+        ScheduleModule.forRoot(),
         MongooseModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
@@ -26,6 +29,7 @@ import { AlertsModule } from "./alerts/alerts.module";
             }
         }),
         PoiModule,
+        RealtimeModule,
         PathModule,
         AuthModule,
         UsersModule,

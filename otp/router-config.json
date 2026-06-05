@@ -1,0 +1,18 @@
+{
+  "updaters" : [
+    {
+        "type" : "stop-time-updater",
+        "frequency" : "1m",
+        "backwardsDelayPropagationType" : "REQUIRED_NO_DATA",
+        "url" : "http://localhost:3000/gtfs-realtime/TrentinoTrasportiUrbano/trip-updates",
+        "feedId" : "TrentinoTrasportiUrbano"
+    },
+    {
+        "type" : "stop-time-updater",
+        "frequency" : "1m",
+        "backwardsDelayPropagationType" : "REQUIRED_NO_DATA",
+        "url" : "http://localhost:3000/gtfs-realtime/TrentinoTrasportiExtraurbano/trip-updates",
+        "feedId" : "TrentinoTrasportiExtraurbano"
+    }
+  ]
+}

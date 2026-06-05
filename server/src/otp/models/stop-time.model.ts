@@ -33,7 +33,6 @@ export class StopTime {
     departureDelay: number;
 
     //Indicates whether the timing data includes live real-time updates
-    //Hardcoded to false 
     @Expose()
     realtime: boolean;
 }

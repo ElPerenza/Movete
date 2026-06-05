@@ -10,7 +10,15 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2023",
+    "target": "es2024",
+    "lib": [
+      "DOM",
+      "es2024",
+      "ESNext.Array",
+      "ESNext.Collection",
+      "ESNext.Iterator",
+      "ESNext.Promise"
+    ],
     "sourceMap": true,
     "outDir": "./dist",
     "incremental": true,

@@ -6,7 +6,7 @@ import session from "express-session";
 async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
         logger: new ConsoleLogger({
-            json: true,
+            json: process.env["JSON_LOGS"] === "true",
             logLevels: ['log']
         }),
     });
