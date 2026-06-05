@@ -15,7 +15,7 @@ export class AlertsService {
     async findActiveByStop(stopId: string) {
         const now = new Date();
         return this.alertModel.find({
-            stopId: stopId,
+            stopId: new Types.ObjectId(stopId),
             isActive: true,
             validFrom: { $lte: now },
             validUntil: { $gte: now }
@@ -25,6 +25,7 @@ export class AlertsService {
     async create(createAlertDto: CreateAlertDto) {
         const newAlert = new this.alertModel({
             ...createAlertDto,
+            stopId: new Types.ObjectId(createAlertDto.stopId),
             createdBy: new Types.ObjectId(createAlertDto.createdBy)
         });
         return newAlert.save();

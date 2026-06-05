@@ -9,8 +9,8 @@ export class Alert extends Document {
     @Prop({ required: true })
     message: string;
 
-    @Prop({ type: String, required: true })
-    stopId: string;
+    @Prop({ type: Types.ObjectId, ref: 'Stop', required: true })
+    stopId: Types.ObjectId;
 
     // who created alert? (worker)
     @Prop({ type: Types.ObjectId, ref: 'User', required: true })

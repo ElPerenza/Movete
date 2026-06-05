@@ -115,7 +115,8 @@ describe('OtpService', () => {
             const mockResponse = {
                 data: {
                     trip: {
-                        stoptimes: [
+                        // CAMBIATO DA stoptimes A stoptimesForDate
+                        stoptimesForDate: [
                             {
                                 stop: { name: 'Stazione Centrale' },
                                 scheduledArrival: 3600, // An hour after midnight
@@ -142,7 +143,6 @@ describe('OtpService', () => {
 
             expect(global.fetch).toHaveBeenCalledWith('http://localhost:8080/otp/gtfs/v1', expect.any(Object));
         });
-
         it('should return an empty array if trip does not exist in OTP graph', async () => {
             (global.fetch as jest.Mock).mockResolvedValueOnce({
                 ok: true,

@@ -2,12 +2,14 @@ import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
 import { Stop } from "../../class/stop";
+import { environment } from "../../../environments/environment";
+
 
 @Injectable({ providedIn: "root" })
 export class UserService {
-    private baseUrl = "http://localhost:3000/users";
+    private baseUrl = `${environment.apiUrl}users`
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     getFavourites(): Observable<Stop[]> {
         return this.http.get<Stop[]>(`${this.baseUrl}/favourites`);

@@ -2,12 +2,13 @@ import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { BehaviorSubject, Observable, tap, catchError, of } from "rxjs";
 import { LoginRequest } from "../models/login-request";
+import { environment } from "../../../environments/environment";
 
 @Injectable({
     providedIn: "root"
 })
 export class AuthService {
-    private baseUrl = "http://localhost:3000/auth";
+    private baseUrl = `${environment.apiUrl}auth`;
 
     private loggedIn = new BehaviorSubject<boolean>(false);
 
@@ -16,7 +17,6 @@ export class AuthService {
     private currentUser: any = null;
 
     constructor(private http: HttpClient) {
-        //    this.checkInitialSession();
         this.checkInitialSession().subscribe();
     }
 
