@@ -8,7 +8,6 @@ import * as polyline from '@mapbox/polyline';
 import { Stop } from "../class/stop";
 import { Path } from "../path/path";
 
-import { StopTime } from "../class/stop-time"
 import { Timetable } from "../timetable/timetable";
 import { environment } from "../../environments/environment";
 

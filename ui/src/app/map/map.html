@@ -107,9 +107,7 @@
                                 class="p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
                                 <div class="font-medium text-gray-800">{{ stop.name }}</div>
                                 @if (selectedStopId === stop.id) {
-                                    <div class="mt-2 text-sm text-gray-600 bg-white p-3 rounded border-l-4 border-blue-500 shadow-sm" (click)="$event.stopPropagation()">
-                                        <app-timetable [stop]="stop"></app-timetable>
-                                    </div>
+                                    <app-timetable [stop]="stop" (click)="$event.stopPropagation()"></app-timetable>
                                 }
                             </li>
                         } @empty {

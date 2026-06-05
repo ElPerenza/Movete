@@ -125,14 +125,14 @@ export class StopService implements OnApplicationBootstrap {
         let stopsAdded = 0;
         const otpStops = await this.otpService.getAllStops();
         for(const otpStop of otpStops) {
-            if(await this.findStopByOtpId(otpStop.gtfsId) != null) {
+            if(await this.findStopByOtpId(otpStop.id) != null) {
                 // we don't add OTP stops that already have their ID in the database
                 continue;
             }
 
             const newStop = new CreateStopDto();
             newStop.name = otpStop.name;
-            newStop.otpStops = [otpStop.gtfsId];
+            newStop.otpStops = [otpStop.id];
             newStop.location = new Point();
             newStop.location.coordinates = [otpStop.lon, otpStop.lat];
             newStop.transportModes = [otpStop.vehicleMode === "RAIL" ? "TRAIN" : otpStop.vehicleMode]; // map RAIL to TRAIN
