@@ -2,10 +2,16 @@
     "osmCacheDataInMem": "true",
     "osm": [
         {
-            "source": "./data/TN.pbf",
+            "source": "./data/TN_cleaned.pbf",
+            "timeZone": "Europe/Rome"
+        },
+        {
+            "source": "./data/trentino_parkings.pbf",
             "timeZone": "Europe/Rome"
         }
     ],
+    "staticParkAndRide": true,
+    "staticBikeParkAndRide": true,
     "transitFeeds": [
         {
             "type": "gtfs",
