@@ -1,5 +1,8 @@
 {
     "osmCacheDataInMem": "true",
+    "osmDefaults": {
+        "nameProperties": ["name", "name:en", "official_name"]
+    },
     "osm": [
         {
             "source": "./data/TN_cleaned.pbf",

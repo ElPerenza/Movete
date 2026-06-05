@@ -15,7 +15,7 @@ spostare i due PBF ottenuti
 "TN_cleaned.pbf"
 "trentino_parkings.pbf"
 nella cartella di OTP:
-e modificare la build-conifg.json in questo modo:
+e modificare la build-confg.json aggiungendo i nuovi .pbf:
 
 {
     "osmCacheDataInMem": "true",
@@ -24,11 +24,11 @@ e modificare la build-conifg.json in questo modo:
     },
     "osm": [
         {
-            "source": "./TN_cleaned.pbf",
+            "source": "./data/TN_cleaned.pbf",
             "timeZone": "Europe/Rome"
         },
         {
-            "source": "./trentino_parkings.pbf",
+            "source": "./data/trentino_parkings.pbf",
             "timeZone": "Europe/Rome"
         }
     ],
@@ -36,17 +36,17 @@ e modificare la build-conifg.json in questo modo:
         {
             "type": "gtfs",
             "feedId": "TrentinoTrasportiUrbano",
-            "source": "./google_transit_urbano_tte.zip"
+            "source": "./data/google_transit_urbano_tte.zip"
         },
         {
             "type": "gtfs",
             "feedId": "TrentinoTrasportiExtraurbano",
-            "source": "./google_transit_extraurbano_tte.zip"
+            "source": "./data/google_transit_extraurbano_tte.zip"
         },
         {
             "type": "netex",
             "feedId": "Trenitalia",
-            "source": "./Trenitalia-netex/"
+            "source": "./data/Trenitalia-netex/"
         }
     ],
     "staticParkAndRide": true,
