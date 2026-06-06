@@ -7,7 +7,7 @@ import { OtpModule } from "../otp/otp.module";
 import { ConfigModule } from "@nestjs/config";
 import { Park, ParkSchema } from "./models/park.schema";
 import { ParkController } from "./controllers/park.controller";
-import { ParkService } from "./services/park.service";
+import { ParkingService } from "./services/park.service";
 
 @Module({
     imports: [
@@ -19,6 +19,6 @@ import { ParkService } from "./services/park.service";
         OtpModule
     ],
     controllers: [StopController, ParkController], 
-    providers: [StopService, ParkService]
+    providers: [StopService, ParkingService]
 })
 export class PoiModule { }

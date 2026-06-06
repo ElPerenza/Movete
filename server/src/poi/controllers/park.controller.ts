@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Delete, Put, Body, Param, NotFoundException, HttpException, HttpStatus } from "@nestjs/common";
-import { ParkService } from "../services/park.service";
+import { ParkingService } from "../services/park.service";
 import { OtpService } from "../../otp/services/otp.service";
 import { UpdateParkDto, CreateParkDto, ParkDto } from "../dto/park.dto";
 import { SearchParkRequestDto } from "../dto/search-park-request.dto";
@@ -8,7 +8,7 @@ import { plainToInstance } from "class-transformer";
 @Controller("pois/park")
 export class ParkController {
     constructor(
-        private parkService: ParkService,
+        private parkService: ParkingService,
         private otpService: OtpService
     ) { }
 

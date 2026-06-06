@@ -10,8 +10,8 @@ import { Point } from "../../common/point";
 import { throwError } from "rxjs";
 
 @Injectable()
-export class ParkService implements OnApplicationBootstrap {
-    private readonly logger = new Logger(ParkService.name, { timestamp: true });
+export class ParkingService implements OnApplicationBootstrap {
+    private readonly logger = new Logger(ParkingService.name, { timestamp: true });
     constructor(
         @InjectModel(Park.name) private parkModel: Model<Park>,
         private readonly configService: ConfigService,
