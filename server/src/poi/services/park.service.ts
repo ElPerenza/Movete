@@ -234,6 +234,6 @@ export class ParkService implements OnApplicationBootstrap {
             parksAdded++;
         }
 
-        this.logger.log(`Park initialization complete: added ${parksAdded} of ${otpBikeParks.length} parks present in OpenTripPlanner`);
+        this.logger.log(`Bike park initialization complete: added ${parksAdded} of ${otpBikeParks.length} bike parks present in OpenTripPlanner`);
     }
 }
