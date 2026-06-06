@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Put, Body, Param, NotFoundException, HttpException, HttpStatus } from "@nestjs/common";
+import { Controller, Get, Post, Delete, Put, Body, Param, NotFoundException, HttpCode } from "@nestjs/common";
 import { ParkingService } from "../services/park.service";
 import { OtpService } from "../../otp/services/otp.service";
 import { UpdateParkDto, CreateParkDto, ParkDto } from "../dto/park.dto";
@@ -52,6 +52,7 @@ export class ParkController {
     }
 
     @Post("/search")
+    @HttpCode(200)
     async search(@Body() request: SearchParkRequestDto): Promise<ParkDto[]> {
         const filteredParks = await this.parkService.search(request);
         return plainToInstance(ParkDto, filteredParks, { excludeExtraneousValues: true });
