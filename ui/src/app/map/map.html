@@ -112,6 +112,25 @@
                             <li class="text-center text-gray-500 mt-10">Nessuna fermata trovata.</li>
                         }
                     </ul>
+
+                    <ul class="space-y-2">
+                        @for (park of currentParks; track park.id) {
+                            <li (click)="selectPark(park)" [id]="'park-card-' + park.id"
+                                class="p-3 rounded-lg border cursor-pointer transition-colors"
+                                [class.border-blue-500]="selectedParkId === park.id"
+                                [class.bg-blue-50]="selectedParkId === park.id"
+                                [class.border-gray-200]="selectedParkId !== park.id"
+                                [class.hover:border-blue-500]="selectedParkId !== park.id"
+                                [class.hover:bg-blue-50]="selectedParkId !== park.id">
+                                <div class="font-medium text-gray-800">{{ park.name }}</div>
+                                <div class="font-medium text-gray-800">Tipologia: {{ park.parkType }}</div>
+                                <div class="font-medium text-gray-800">Capienza: {{ park.maxCapacity ? park.maxCapacity : 'dato non disponibile' }}</div>
+                                <div class="font-medium text-gray-800">Posti disponibili: {{ park.currentCapacity ? park.currentCapacity : 'dato non disponibile' }}</div>
+                            </li>
+                        } @empty {
+                            <li class="text-center text-gray-500 mt-10">Nessuna fermata trovata.</li>
+                        }
+                    </ul>
                 } @else {
                     <div class="flex items-center justify-between w-full mb-3">
                         <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Percorsi Disponibili</span>

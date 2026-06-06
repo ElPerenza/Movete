@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  osmium-converter:
+    image: ubuntu:24.04
+    volumes:
+      - .:/data
+    working_dir: /data
+    entrypoint: /bin/sh
+    command: >
+      -c "
+      echo 'Updating package list...' &&
+      apt-get update -qy &&
+      echo 'Installing osmium-tool...' &&
+      apt-get install -qy osmium-tool &&
+      
+      echo 'Compiling unified OSM XML directly into binary PBF...' &&
+      osmium cat trentino_parkings.osm -o trentino_parkings.pbf --overwrite &&
+      
+      echo 'Stripping background parking nodes from TN.pbf...' &&
+      osmium tags-filter TN.pbf nwr/amenity=parking,bicycle_parking --invert-match -o TN_cleaned.pbf --overwrite
+      
+      echo 'Conversion complete! trentino_parkings.pbf and TN_cleaned.pbf created successfully.'"

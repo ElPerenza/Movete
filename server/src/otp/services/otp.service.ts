@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLClientService } from '../../graphql-client/services/graphql-client.service'
 import { Stop, Stoptime, StoptimeType, StoptimeWithTripInfo, TripPathInformation } from '../types/otp-types';
+import { Park } from '../../poi/models/park.schema';
+import { ParkType } from '../../poi/models/park.schema';
 
 /**
  * A OTP trip ID with its associated active dates in YYYYMMDD format.
@@ -328,5 +330,101 @@ export class OtpService {
         `;
         const { trips: tripDates } = await this.graphQlClient.makeQuery<{ trips: TripDates[] }>(this.OTP_GRAPHQL_URL, query, { feedId: feedId });
         return tripDates;
+    }
+
+    // Accepts an array of strings to handle multiple GTFS IDs for a single logical stop
+    // TODO: refactor to use GraphQLClient
+    async getAllCarPark(): Promise<Park[]> {
+        const query = `
+            query getCarPark {
+                carParks {
+                    id
+                    name
+                    tags
+                    maxCapacity
+                    lat
+                    lon
+                }
+            }
+        `;
+        try {
+            const response = await fetch(this.OTP_GRAPHQL_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    query
+                }),
+            });
+            const { data, errors } = await response.json();
+
+            if (errors || !data?.carParks) {
+                return [];
+            }
+
+            return data.carParks.map((rawPark: any): Park => {
+                return {
+                otpId: rawPark.id,
+                trentinoApiId: "", // Left null if it's not present in this OTP query
+                name: rawPark.name || 'Unnamed Parking',
+                location: {
+                    type: 'Point',
+                    // CRITICAL: MongoDB GeoJSON coordinates must be [longitude, latitude]
+                    coordinates: [rawPark.lon, rawPark.lat],
+                },
+                parkType: ParkType.CAR, // Explicitly set based on this method context
+                maxCapacity: rawPark.maxCapacity ?? null, // Fallback safely if null
+                currentCapacity: null
+                };
+            });
+        } catch (error) {
+            console.error(`Failed to fetch car parkings: ${error}`);
+            return [];
+        }
+    }
+
+    // TODO: refactor to use GraphQLClient
+    async getAllBikePark(): Promise<Park[]> {
+        const query = `
+            query getBikePark {
+                bikeParks{
+                    id
+                    name
+                    lat
+                    lon
+                }
+            }
+        `;
+        try {
+            const response = await fetch(this.OTP_GRAPHQL_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    query
+                }),
+            });
+            const { data, errors } = await response.json();
+
+            if (errors || !data?.bikeParks) {
+                return [];
+            }
+
+            return data.bikeParks.map((rawPark: any): Park => {
+                return {
+                otpId: rawPark.id,
+                trentinoApiId: "",
+                name: rawPark.name || 'Unnamed Parking',
+                location: {
+                    type: 'Point',
+                    coordinates: [rawPark.lon, rawPark.lat],
+                },
+                parkType: ParkType.BIKE, // Explicitly set based on this method context
+                maxCapacity: rawPark.maxCapacity ?? null, // Fallback safely if null
+                currentCapacity: null
+                };
+            });
+        } catch (error) {
+            console.error(`Failed to fetch car parkings: ${error}`);
+            return [];
+        }
     }
 }

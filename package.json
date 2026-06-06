@@ -1,25 +1,19 @@
 {
-    "name": "movete",
-    "version": "0.0.1",
-    "private": true,
-    "description": "",
-    "workspaces": [
-        "server",
-        "ui"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/ElPerenza/Movete.git"
-    },
-    "license": "GPL-3.0-only",
-    "bugs": {
-        "url": "https://github.com/ElPerenza/Movete/issues"
-    },
-    "homepage": "https://github.com/ElPerenza/Movete#readme",
-    "dependencies": {
-        "leaflet": "^1.9.4"
-    },
-    "devDependencies": {
-        "@types/leaflet": "^1.9.21"
-    }
+  "name": "movete",
+  "version": "0.0.1",
+  "private": true,
+  "description": "",
+  "workspaces": [
+    "server",
+    "ui"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ElPerenza/Movete.git"
+  },
+  "license": "GPL-3.0-only",
+  "bugs": {
+    "url": "https://github.com/ElPerenza/Movete/issues"
+  },
+  "homepage": "https://github.com/ElPerenza/Movete#readme"
 }

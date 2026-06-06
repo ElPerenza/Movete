@@ -6,6 +6,7 @@ import { RouterLink, RouterOutlet } from "@angular/router";
 import * as L from 'leaflet';
 import * as polyline from '@mapbox/polyline';
 import { Stop } from "../class/stop";
+import { Park, ParkType } from "../class/park";
 import { Path } from "../path/path";
 
 import { Timetable } from "../timetable/timetable";
@@ -24,6 +25,9 @@ import { Subscription } from 'rxjs';
 export class Map implements AfterViewInit, OnInit {
     private map!: L.Map;
     private stopsLayerMarkerGroup: L.LayerGroup = L.layerGroup();
+    private parksLayerMarkerGroup: L.LayerGroup = L.layerGroup();
+    private parkMarkersMap: { [id: string]: L.Marker } = {};
+    private stopMarkersMap: { [id: string]: L.Marker } = {};
     private _pathComponent!: Path;
     @ViewChild(Path) set pathComponent(content: Path) {
         if (content) {
@@ -43,12 +47,15 @@ export class Map implements AfterViewInit, OnInit {
     private defaultEnd: L.LatLngExpression = [46.070, 11.130];
 
     private baseUrl: string = new URL('pois/stop/', environment.apiUrl).href;
+    private baseParkUrl: string = new URL('pois/park/', environment.apiUrl).href;
     private header: HttpHeaders = new HttpHeaders({ 'Content-Type': 'application/json' });
     private panning: boolean = false;
 
     public currentStops: Stop[] = [];
+    public currentParks: Park[] = [];
     public showSidebar: boolean = true;
     public selectedStopId: string | null = null;
+    public selectedParkId: string | null = null;
     public showPathForm = false;
     Math = Math
 
@@ -59,9 +66,11 @@ export class Map implements AfterViewInit, OnInit {
      * TODO here we will add poi types like stops, park and park with sensor.
      */
     public transportFilters = [
-        { label: 'Bus', value: 'BUS', checked: false },
-        { label: 'Train', value: 'TRAIN', checked: false },
-        { label: 'Cable Car', value: 'CABLE_CAR', checked: false }
+        { label: 'Bus', value: 'BUS', checked: true, isPoiType: false },
+        { label: 'Train', value: 'TRAIN', checked: false, isPoiType: false },
+        { label: 'Cable Car', value: 'CABLE_CAR', checked: false, isPoiType: false },
+        { label: 'Car Parks', value: 'car', checked: false, isPoiType: true },
+        { label: 'Bike Parks', value: 'bike', checked: false, isPoiType: true }
     ];
     public useBbox: boolean = true;
     public isLoggedIn: boolean = false;
@@ -136,8 +145,8 @@ export class Map implements AfterViewInit, OnInit {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(this.map);
-
         this.stopsLayerMarkerGroup.addTo(this.map);
+        this.parksLayerMarkerGroup.addTo(this.map);
         this.pathsLayer.addTo(this.map);
 
         this.fetchStopsInBound();
@@ -160,21 +169,92 @@ export class Map implements AfterViewInit, OnInit {
         //Get the bounding box of the current map
         var bottomRight = this.map.getBounds().getSouthEast();
         var topLeft = this.map.getBounds().getNorthWest();
-        const payload: { transportTypes: string[], bbox?: any } = {
-            "transportTypes": this.selectedTransportTypes
-        };
-        if (this.useBbox) {
-            payload.bbox = {
-                "topLeft": { "type": "Point", "coordinates": [topLeft.lng, topLeft.lat] },
-                "bottomRight": { "type": "Point", "coordinates": [bottomRight.lng, bottomRight.lat] }
-            }
+
+        this.addStopsToMap([]);
+        this.addParkToMap([]);
+
+        const anyChecked = this.transportFilters.some(f => f.checked);
+        
+        
+        let fetchStops = false;
+        let fetchParks = false;
+
+        let targetTransportTypes: string[] = [];
+        let targetParkTypes: string[] = [];
+        
+        if (!anyChecked) {
+            fetchStops = true;
+            fetchParks = true;
+        } else {
+            // Check specific selections
+            targetTransportTypes = this.selectedTransportTypes;
+            targetParkTypes = this.selectedParkTypes;
+            
+            if (targetTransportTypes.length > 0) fetchStops = true;
+            if (targetParkTypes.length > 0) fetchParks = true;
         }
-        //Actual request
-        this.http.post<Stop[]>(this.baseUrl + 'search', JSON.stringify(payload), { headers: this.header }).subscribe({
-            next: (data) => {
-                this.addStopsToMap(data);
+
+        if (fetchStops){
+            const payload: { transportTypes: string[], bbox?: any } = {
+                "transportTypes": this.selectedTransportTypes
+            };
+            if (this.useBbox) {
+                payload.bbox = {
+                    "topLeft": { "type": "Point", "coordinates": [topLeft.lng, topLeft.lat] },
+                    "bottomRight": { "type": "Point", "coordinates": [bottomRight.lng, bottomRight.lat] }
+                }
             }
-            //TODO add on error
+            //Actual request
+            this.http.post<Stop[]>(this.baseUrl + 'search', JSON.stringify(payload), { headers: this.header }).subscribe({
+                next: (data) => {
+                    this.addStopsToMap(data);
+                }
+                //TODO add on error
+            });
+        }
+        
+        if (fetchParks) {
+            const payload: { parkTypes: string[], bbox?: any } = {
+                "parkTypes": this.selectedParkTypes
+            };
+            if (this.useBbox) {
+                payload.bbox = {
+                    "topLeft": { "type": "Point", "coordinates": [topLeft.lng, topLeft.lat] },
+                    "bottomRight": { "type": "Point", "coordinates": [bottomRight.lng, bottomRight.lat] }
+                }
+            }
+            //Actual request
+            this.http.post<Park[]>(this.baseParkUrl + 'search', JSON.stringify(payload), { headers: this.header }).subscribe({
+                next: (data) => {
+                    this.addParkToMap(data);
+                }
+                //TODO add on error
+            });
+        }
+        
+        
+        
+    }
+    
+    /**
+     * Helper method to generate custom HTML icons for transport STOPS.
+     */
+    private createStopIcon(isSelected: boolean): L.DivIcon {
+        let markerClasses = "flex items-center justify-center rounded-full border-2 text-white font-bold transition-all duration-200 shadow-md";
+        
+        if (isSelected) {
+            // Highlighted Stop state: Emerald Green / Cyan pop
+            markerClasses += " bg-emerald-500 border-emerald-200 w-9 h-9 text-base scale-110 z-[1000]";
+        } else {
+            // Default Stop state: Classic Blue circle
+            markerClasses += " bg-blue-600 border-blue-400 w-7 h-7 text-xs";
+        }
+
+        return L.divIcon({
+            html: `<div class="${markerClasses}">S</div>`, // Displays an 'S' for Stop
+            className: '', 
+            iconSize: isSelected ? [36, 36] : [28, 28],
+            iconAnchor: isSelected ? [18, 18] : [14, 14]
         });
     }
 
@@ -188,7 +268,13 @@ export class Map implements AfterViewInit, OnInit {
         this.currentStops = stops;
 
         stops.forEach(stop => {
-            const marker = L.marker([stop.location.coordinates[1], stop.location.coordinates[0]]);
+            const isSelected = this.selectedStopId === stop.id;
+            const marker = L.marker(
+                [stop.location.coordinates[1], stop.location.coordinates[0]], 
+                { icon: this.createStopIcon(isSelected) }
+            );
+
+            this.stopMarkersMap[stop.id] = marker;
 
             marker.on('click', () => {
                 this.selectStop(stop);
@@ -205,10 +291,21 @@ export class Map implements AfterViewInit, OnInit {
      * @param stop, the stop to visualize
      */
     public selectStop(stop: Stop): void {
+        if (this.selectedStopId && this.stopMarkersMap[this.selectedStopId]) {
+            const previousMarker = this.stopMarkersMap[this.selectedStopId];
+            previousMarker.setIcon(this.createStopIcon(false));
+            previousMarker.setZIndexOffset(0);
+        }
+
         if (this.selectedStopId === stop.id) {
             // Deselect if clicking the same stop
             this.selectedStopId = null;
         } else {
+            if (this.stopMarkersMap[stop.id]) {
+                const currentMarker = this.stopMarkersMap[stop.id];
+                currentMarker.setIcon(this.createStopIcon(true));
+                currentMarker.setZIndexOffset(1000);
+            }
             // Select and fetch data
             this.selectedStopId = stop.id;
             this.panning = true;
@@ -262,6 +359,97 @@ export class Map implements AfterViewInit, OnInit {
         });
     }
 
+    /**
+     * Helper method to generate custom HTML 'P' markers for parking spots.
+     * @param isSelected whether this specific park marker is highlighted
+     */
+    private createParkIcon(isSelected: boolean, type: ParkType): L.DivIcon {
+        // Base tailwind styling classes for the marker circle container
+        let markerClasses = "flex items-center justify-center rounded-full border-2 text-white font-bold transition-all duration-200 shadow-md";
+        
+        if (isSelected) {
+            // Selected/Highlighted state: Larger, distinct color, active scaling pulse
+            markerClasses += " bg-amber-500 border-amber-200 w-9 h-9 text-base scale-110 z-[1000]";
+        } else {
+            if (type === ParkType.CAR) {
+                // Default unselected state for Car Parks: Orange hue to differentiate from stops
+                markerClasses += " bg-orange-600 border-orange-400 w-7 h-7 text-xs";
+            } else if (type === ParkType.BIKE) {
+                // Default unselected state for Bike Parks: Teal hue to differentiate from stops and car parks
+                markerClasses += " bg-teal-600 border-teal-400 w-7 h-7 text-xs";
+            }
+        }
+        return L.divIcon({
+            html: `<div class="${markerClasses}">P</div>`,
+            className: 'custom-park-marker', // Clears Leaflet's default white background box styling
+            iconSize: isSelected ? [36, 36] : [28, 28],
+            iconAnchor: isSelected ? [18, 18] : [14, 14] // Centers anchor directly in the middle of the circle
+        });
+
+    }
+
+    /**
+     * Add all the parks to the markerLayer, and displays it on the map
+     * @param parks, the list of park that need to be displayed
+     */
+    private addParkToMap(parks: Park[]): void {
+        //Clear the previews markers
+        this.parksLayerMarkerGroup.clearLayers();
+        this.currentParks = parks;
+
+        parks.forEach(park => {
+            const isSelected = this.selectedParkId === park.id;
+            const marker = L.marker(
+                [park.location.coordinates[1], park.location.coordinates[0]], 
+                { icon: this.createParkIcon(isSelected, park.parkType) }
+            );
+            this.parkMarkersMap[park.id] = marker;
+            marker.on('click', () => {
+                this.selectPark(park);
+                this.showSidebar = true;
+                this.cdr.detectChanges();
+            });
+            marker.addTo(this.parksLayerMarkerGroup)
+        })
+        this.cdr.detectChanges();
+    }
+
+    /**
+     * Display the content of the park that has been clicked on the navbar
+     * @param park, the park to visualize
+     */
+    public selectPark(park: Park): void {
+        if (this.selectedParkId && this.parkMarkersMap[this.selectedParkId]) {
+            const previousMarker = this.parkMarkersMap[this.selectedParkId];
+            previousMarker.setIcon(this.createParkIcon(false, park.parkType));
+            previousMarker.setZIndexOffset(0);
+        }
+
+        if (this.selectedParkId === park.id) {
+            // Deselect if clicking the same park
+            this.selectedParkId = null;
+        } else {
+            // Select and fetch data
+            this.selectedParkId = park.id;
+            if (this.parkMarkersMap[park.id]) {
+                const currentMarker = this.parkMarkersMap[park.id];
+                currentMarker.setIcon(this.createParkIcon(true, park.parkType));
+                currentMarker.setZIndexOffset(1000); 
+            }
+
+            this.panning = true;
+            this.map.panTo([park.location.coordinates[1], park.location.coordinates[0]]);
+            const targetElement = document.getElementById(`park-card-${park.id}`);
+
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'instant', // Smooth slide animation
+                    block: 'start'    // Brings it into view minimalistically without jarring the whole page
+                });
+            }
+        }
+        this.cdr.detectChanges();
+    }
 
     /**
      * Get the transport types that are selected in the filter, 
@@ -269,7 +457,17 @@ export class Map implements AfterViewInit, OnInit {
      */
     get selectedTransportTypes(): string[] {
         return this.transportFilters
-            .filter(f => f.checked)
+            .filter(f => !f.isPoiType && f.checked)
+            .map(f => f.value);
+    }
+
+    /**
+     * Get the park types that are selected in the filter, 
+     * this is used to send the request to the backend with the correct filter
+     */
+    get selectedParkTypes(): string[] {
+        return this.transportFilters
+            .filter(f => f.isPoiType && f.checked)
             .map(f => f.value);
     }
 
@@ -304,11 +502,13 @@ export class Map implements AfterViewInit, OnInit {
         if (this.showPathForm) {
 
             this.map.removeLayer(this.stopsLayerMarkerGroup);
+            this.map.removeLayer(this.parksLayerMarkerGroup);
             this.flagsLayer.addTo(this.map);
         } else {
 
             this.flagsLayer.remove();
             this.stopsLayerMarkerGroup.addTo(this.map);
+            this.parksLayerMarkerGroup.addTo(this.map);
         }
     }
 
