@@ -1,5 +1,5 @@
 import { Expose } from "class-transformer";
-import { IsMongoId, IsNotEmpty, Max, Min } from "class-validator";
+import { IsNotEmpty, Max, Min } from "class-validator";
 
 export class ParkFeedbackDto {
 
