@@ -1,7 +1,8 @@
+import { PartialType } from "@nestjs/mapped-types";
 import { Expose } from "class-transformer";
 import { IsNotEmpty, Max, Min } from "class-validator";
 
-export class ParkFeedbackDto {
+export class TripFeedbackDto {
 
     @Expose()
     @IsNotEmpty()
@@ -24,3 +25,5 @@ export class ParkFeedbackDto {
     @Max(7)
     day: number;
 }
+
+export class UpdateTripFeedbackDto extends PartialType(TripFeedbackDto) {}

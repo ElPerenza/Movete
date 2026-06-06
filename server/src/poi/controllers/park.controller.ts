@@ -4,6 +4,7 @@ import { OtpService } from "../../otp/services/otp.service";
 import { UpdateParkDto, CreateParkDto, ParkDto } from "../dto/park.dto";
 import { SearchParkRequestDto } from "../dto/search-park-request.dto";
 import { plainToInstance } from "class-transformer";
+import { ParkFeedbackDto } from "../dto/park-feedback.dto";
 
 @Controller("pois/park")
 export class ParkController {
@@ -56,5 +57,17 @@ export class ParkController {
     async search(@Body() request: SearchParkRequestDto): Promise<ParkDto[]> {
         const filteredParks = await this.parkService.search(request);
         return plainToInstance(ParkDto, filteredParks, { excludeExtraneousValues: true });
+    }
+
+    @Post("/trip/feedback")
+    async createTripFeedback(@Body() feedback: ParkFeedbackDto): Promise<ParkFeedbackDto> {
+        const createdFeedback = await this.parkService.createFeedback(feedback);
+        return plainToInstance(ParkFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Put("/trip/feedback")
+    async updateTripFeedback(@Body() feedback: UpdateParkDto): Promise<ParkFeedbackDto> {
+        const createdFeedback = await this.parkService.updateFeedback(feedback);
+        return plainToInstance(ParkFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
     }
 }

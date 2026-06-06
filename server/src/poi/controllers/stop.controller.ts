@@ -5,6 +5,8 @@ import { StopDto, CreateStopDto, UpdateStopDto } from "../dto/stop.dto";
 import { SearchStopRequestDto } from "../dto/search-stop-request.dto";
 import { plainToInstance } from "class-transformer";
 import { Stoptime, StoptimeWithTripInfo } from "../../otp/types/otp-types";
+import { StopFeedbackDto, UpdateStopFeedbackDto } from "../dto/stop-feedback.dto";
+import { TripFeedbackDto, UpdateTripFeedbackDto } from "../dto/trip-feedback.dto";
 
 @Controller("pois/stop")
 export class StopController {
@@ -75,5 +77,29 @@ export class StopController {
     @Get("/trip/:tripId/:serviceDate/details")
     async getTripDetails(@Param("tripId") tripId: string, @Param("serviceDate") serviceDate: number): Promise<Stoptime[]> {
         return this.otpService.getTripStoptimes(tripId, new Date(serviceDate));
+    }
+
+    @Post("/feedback")
+    async createFeedback(@Body() feedback: StopFeedbackDto): Promise<StopFeedbackDto> {
+        const createdFeedback = await this.stopService.createFeedback(feedback);
+        return plainToInstance(StopFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Put("/feedback")
+    async updateFeedback(@Body() feedback: UpdateStopFeedbackDto): Promise<StopFeedbackDto> {
+        const createdFeedback = await this.stopService.updateFeedback(feedback);
+        return plainToInstance(StopFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Post("/trip/feedback")
+    async createTripFeedback(@Body() feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
+        const createdFeedback = await this.stopService.createFeedback(feedback);
+        return plainToInstance(TripFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Put("/trip/feedback")
+    async updateTripFeedback(@Body() feedback: UpdateTripFeedbackDto): Promise<TripFeedbackDto> {
+        const createdFeedback = await this.stopService.updateFeedback(feedback);
+        return plainToInstance(TripFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
     }
 }
