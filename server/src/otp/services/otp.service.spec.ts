@@ -3,6 +3,9 @@ import { OtpService } from './otp.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpException } from '@nestjs/common';
 
+// TODO: this file has to be rwritten from sratch to adhere to the new OTPService implementation
+// we should've coordinated better to prevent this from happening...
+
 global.fetch = jest.fn();
 
 describe('OtpService', () => {
