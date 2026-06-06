@@ -2,10 +2,6 @@ import { Expose } from "class-transformer";
 import { IsMongoId, IsNotEmpty, Max, Min } from "class-validator";
 
 export class ParkFeedbackDto {
-    
-    @Expose()
-    @IsMongoId()
-    id: string;
 
     @Expose()
     @IsNotEmpty()

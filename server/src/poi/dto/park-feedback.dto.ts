@@ -3,9 +3,6 @@ import { IsMongoId, IsNotEmpty, Max, Min } from "class-validator";
 
 export class ParkFeedbackDto {
 
-    @Expose()
-    @IsMongoId()
-    id: string;
 
     @Expose()
     @IsNotEmpty()
@@ -27,7 +24,7 @@ export class ParkFeedbackDto {
     @Min(1)
     @Max(7)
     day: number;
-    
+
     @Expose()
     @Min(6)
     @Max(23)
