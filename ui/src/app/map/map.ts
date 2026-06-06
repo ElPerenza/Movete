@@ -6,7 +6,7 @@ import { RouterLink, RouterOutlet } from "@angular/router";
 import * as L from 'leaflet';
 import * as polyline from '@mapbox/polyline';
 import { Stop } from "../class/stop";
-import { Park } from "../class/park";
+import { Park, ParkType } from "../class/park";
 import { Path } from "../path/path";
 import { Timetable } from "../timetable/timetable";
 import { environment } from "../../environments/environment";
@@ -312,7 +312,7 @@ export class Map implements AfterViewInit, OnInit {
      * Helper method to generate custom HTML 'P' markers for parking spots.
      * @param isSelected whether this specific park marker is highlighted
      */
-    private createParkIcon(isSelected: boolean): L.DivIcon {
+    private createParkIcon(isSelected: boolean, type: ParkType): L.DivIcon {
         // Base tailwind styling classes for the marker circle container
         let markerClasses = "flex items-center justify-center rounded-full border-2 text-white font-bold transition-all duration-200 shadow-md";
         
@@ -320,8 +320,13 @@ export class Map implements AfterViewInit, OnInit {
             // Selected/Highlighted state: Larger, distinct color, active scaling pulse
             markerClasses += " bg-amber-500 border-amber-200 w-9 h-9 text-base scale-110 z-[1000]";
         } else {
-            // Default unselected state: Dark grey/indigo color to contrast against public transport stops
-            markerClasses += " bg-slate-700 border-slate-400 w-7 h-7 text-xs";
+            if (type === ParkType.CAR) {
+                // Default unselected state for Car Parks: Orange hue to differentiate from stops
+                markerClasses += " bg-orange-600 border-orange-400 w-7 h-7 text-xs";
+            } else if (type === ParkType.BIKE) {
+                // Default unselected state for Bike Parks: Teal hue to differentiate from stops and car parks
+                markerClasses += " bg-teal-600 border-teal-400 w-7 h-7 text-xs";
+            }
         }
         return L.divIcon({
             html: `<div class="${markerClasses}">P</div>`,
@@ -345,7 +350,7 @@ export class Map implements AfterViewInit, OnInit {
             const isSelected = this.selectedParkId === park.id;
             const marker = L.marker(
                 [park.location.coordinates[1], park.location.coordinates[0]], 
-                { icon: this.createParkIcon(isSelected) }
+                { icon: this.createParkIcon(isSelected, park.parkType) }
             );
             this.parkMarkersMap[park.id] = marker;
             marker.on('click', () => {
@@ -366,7 +371,7 @@ export class Map implements AfterViewInit, OnInit {
     public selectPark(park: Park): void {
         if (this.selectedParkId && this.parkMarkersMap[this.selectedParkId]) {
             const previousMarker = this.parkMarkersMap[this.selectedParkId];
-            previousMarker.setIcon(this.createParkIcon(false));
+            previousMarker.setIcon(this.createParkIcon(false, park.parkType));
             previousMarker.setZIndexOffset(0);
         }
 
@@ -378,7 +383,7 @@ export class Map implements AfterViewInit, OnInit {
             this.selectedParkId = park.id;
             if (this.parkMarkersMap[park.id]) {
                 const currentMarker = this.parkMarkersMap[park.id];
-                currentMarker.setIcon(this.createParkIcon(true));
+                currentMarker.setIcon(this.createParkIcon(true, park.parkType));
                 currentMarker.setZIndexOffset(1000); 
             }
 
@@ -447,11 +452,13 @@ export class Map implements AfterViewInit, OnInit {
         if (this.showPathForm) {
 
             this.map.removeLayer(this.stopsLayerMarkerGroup);
+            this.map.removeLayer(this.parksLayerMarkerGroup);
             this.flagsLayer.addTo(this.map);
         } else {
 
             this.flagsLayer.remove();
             this.stopsLayerMarkerGroup.addTo(this.map);
+            this.parksLayerMarkerGroup.addTo(this.map);
         }
     }
 
