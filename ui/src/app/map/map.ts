@@ -53,7 +53,7 @@ export class Map implements AfterViewInit, OnInit {
     public currentParks: Park[] = [];
     public showSidebar: boolean = true;
     public selectedStopId: string | null = null;
-    public selcetedParkId: string | null = null;
+    public selectedParkId: string | null = null;
     public showPathForm = false;
     Math = Math
 
@@ -342,7 +342,7 @@ export class Map implements AfterViewInit, OnInit {
         this.currentParks = parks;
 
         parks.forEach(park => {
-            const isSelected = this.selcetedParkId === park.id;
+            const isSelected = this.selectedParkId === park.id;
             const marker = L.marker(
                 [park.location.coordinates[1], park.location.coordinates[0]], 
                 { icon: this.createParkIcon(isSelected) }
@@ -364,18 +364,18 @@ export class Map implements AfterViewInit, OnInit {
      * @param park, the park to visualize
      */
     public selectPark(park: Park): void {
-        if (this.selcetedParkId && this.parkMarkersMap[this.selcetedParkId]) {
-            const previousMarker = this.parkMarkersMap[this.selcetedParkId];
+        if (this.selectedParkId && this.parkMarkersMap[this.selectedParkId]) {
+            const previousMarker = this.parkMarkersMap[this.selectedParkId];
             previousMarker.setIcon(this.createParkIcon(false));
             previousMarker.setZIndexOffset(0);
         }
 
-        if (this.selcetedParkId === park.id) {
+        if (this.selectedParkId === park.id) {
             // Deselect if clicking the same park
-            this.selcetedParkId = null;
+            this.selectedParkId = null;
         } else {
             // Select and fetch data
-            this.selcetedParkId = park.id;
+            this.selectedParkId = park.id;
             if (this.parkMarkersMap[park.id]) {
                 const currentMarker = this.parkMarkersMap[park.id];
                 currentMarker.setIcon(this.createParkIcon(true));
