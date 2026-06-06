@@ -8,6 +8,9 @@ import { RealtimeModule } from './realtime/realtime.module';
 import { ScheduleModule } from "@nestjs/schedule";
 import { PathModule } from './path/path.module';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from "./users/users.module";
+import { NotesModule } from "./notes/notes.module";
+import { AlertsModule } from "./alerts/alerts.module";
 
 @Module({
     imports: [
@@ -29,6 +32,9 @@ import { AuthModule } from './auth/auth.module';
         RealtimeModule,
         PathModule,
         AuthModule,
+        UsersModule,
+        NotesModule,
+        AlertsModule,
     ],
     controllers: [AppController],
     providers: [AppService]

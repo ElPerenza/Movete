@@ -9,12 +9,12 @@ import { SchedulerRegistry } from "@nestjs/schedule";
  */
 @Injectable()
 export class TrentinoTrasportiGtfsRealtimeFactory {
-    
+
     constructor(
         private readonly otpService: OtpService,
         private readonly ttApiService: TrentinoTrasportiApiService,
         private readonly schedulerRegistry: SchedulerRegistry
-    ) {}
+    ) { }
 
     /**
      * Return a GTFS Realtime provider for a specific OTP feed ID.

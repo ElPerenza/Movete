@@ -1,0 +1,30 @@
+import { Test, TestingModule } from "@nestjs/testing";
+import { AlertsController } from "./alerts.controller";
+import { AlertsService } from "../services/alerts.service";
+
+describe("AlertsController", () => {
+    let controller: AlertsController;
+
+    const mockAlertsService = {
+        findAll: jest.fn(),
+        findActiveByStop: jest.fn(),
+        create: jest.fn()
+    };
+
+    beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            controllers: [AlertsController],
+            providers: [{ provide: AlertsService, useValue: mockAlertsService }]
+        }).compile();
+
+        controller = module.get<AlertsController>(AlertsController);
+    });
+
+    it("should return all alerts", async () => {
+        mockAlertsService.findAll.mockResolvedValue([{ title: "Test Alert" }]);
+
+        const result = await controller.getAllAlerts();
+        expect(result).toEqual([{ title: "Test Alert" }]);
+        expect(mockAlertsService.findAll).toHaveBeenCalledWith(20);
+    });
+});
