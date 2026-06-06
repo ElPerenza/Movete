@@ -329,11 +329,10 @@ export class OtpService {
             return data.bikeParks.map((rawPark: any): Park => {
                 return {
                 otpId: rawPark.id,
-                trentinoApiId: "", // Left null if it's not present in this OTP query
+                trentinoApiId: "",
                 name: rawPark.name || 'Unnamed Parking',
                 location: {
                     type: 'Point',
-                    // CRITICAL: MongoDB GeoJSON coordinates must be [longitude, latitude]
                     coordinates: [rawPark.lon, rawPark.lat],
                 },
                 parkType: ParkType.BIKE, // Explicitly set based on this method context
