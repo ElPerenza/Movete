@@ -147,7 +147,6 @@ export class ParkService implements OnApplicationBootstrap {
                 const data = await response.json();
                 externalParks = Array.isArray(data) ? data : (data.parks || []);
             }
-            this.logger.log(externalParks);
         } catch (error) {
             this.logger.error(`Failed to fetch external parks: ${error}`);
             // Fallback gracefully to standard database records if target endpoint fails
