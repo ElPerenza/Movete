@@ -154,13 +154,16 @@ export class ParkingService implements OnApplicationBootstrap {
         }
         externalParks.forEach(externalPark => {
             var exist = false;
+            var externalType = externalPark.type !== "park" ? externalPark.type : "car";
             const externalCoords: [number, number] = this.parseWktPoint(externalPark.geom);
             var currentPark  = new this.parkModel();
             dbParks.forEach(park => {
                 if (this.getDistanceInMeters(park.location.coordinates, externalCoords) <= 100){
-                    exist = true
-                    currentPark = park;
-                    return ;
+                    if (externalType === park.parkType) {
+                        exist = true
+                        currentPark = park;
+                        return ;
+                    }
                 }
             })
 
