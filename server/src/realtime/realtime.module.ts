@@ -1,5 +1,4 @@
 import { Module, Provider } from '@nestjs/common';
-import { OtpRealtimeService } from './services/otp-realtime.service';
 import { GraphQLClientModule } from '../graphql-client/graphql-client.module';
 import { GtfsRealtimeController } from './controllers/gtfs-realtime.controller';
 import { TrentinoTrasportiApiService } from './services/trentino-trasporti-api.service';
@@ -8,25 +7,35 @@ import { ConfigModule } from '@nestjs/config';
 import { GTFS_RT_PROVIDERS } from './provider-tokens';
 import { GtfsRealtimeProvider } from './gtfs-realtime-providers/gtfs-realtime-provider';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ViaggiatrenoApiService } from './services/viaggiatreno-api.service';
+import { ViaggiatrenoGtfsRealtimeFactory } from './services/viaggiatreno-gtfs-realtime-factory';
+import { OtpModule } from '../otp/otp.module';
 
 const gtfsRealtimeProviders: Provider<Map<string, GtfsRealtimeProvider>> = {
     provide: GTFS_RT_PROVIDERS,
-    inject: [TrentinoTrasportiGtfsRealtimeFactory],
-    useFactory: (ttRealtimeFactory: TrentinoTrasportiGtfsRealtimeFactory) => {
-        return new Map([
+    inject: [TrentinoTrasportiGtfsRealtimeFactory, ViaggiatrenoGtfsRealtimeFactory],
+    useFactory: (ttRealtimeFactory: TrentinoTrasportiGtfsRealtimeFactory, vtRealtimeFactory: ViaggiatrenoGtfsRealtimeFactory) => {
+        return new Map<string, GtfsRealtimeProvider>([
             ["TrentinoTrasportiUrbano", ttRealtimeFactory.forFeed("TrentinoTrasportiUrbano")],
-            ["TrentinoTrasportiExtraurbano", ttRealtimeFactory.forFeed("TrentinoTrasportiExtraurbano")]
+            ["TrentinoTrasportiExtraurbano", ttRealtimeFactory.forFeed("TrentinoTrasportiExtraurbano")],
+            ["Trenitalia", vtRealtimeFactory.forFeed("Trenitalia")]
         ]);
     }
 };
 
 @Module({
-    imports: [GraphQLClientModule, ConfigModule, ScheduleModule],
+    imports: [
+        GraphQLClientModule,
+        ConfigModule, 
+        ScheduleModule,
+        OtpModule
+    ],
     controllers: [GtfsRealtimeController],
-    providers: [
-        OtpRealtimeService, 
+    providers: [ 
         TrentinoTrasportiApiService,
         TrentinoTrasportiGtfsRealtimeFactory,
+        ViaggiatrenoApiService,
+        ViaggiatrenoGtfsRealtimeFactory,
         gtfsRealtimeProviders
     ]
 })

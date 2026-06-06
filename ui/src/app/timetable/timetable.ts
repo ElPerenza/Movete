@@ -1,15 +1,15 @@
-import { Component, Input, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Stop } from '../class/stop';
-import { StopTime } from '../class/stop-time';
+import { Component, Input, OnChanges, SimpleChanges, ChangeDetectorRef, OnInit, OnDestroy } from "@angular/core";
+import { DatePipe, CommonModule } from "@angular/common";
+import { HttpClient } from "@angular/common/http";
+import { FormsModule } from "@angular/forms";
+import { Subscription } from "rxjs";
+import { Stop } from "../class/stop";
+import { Stoptime, StoptimeWithTripInfo, TripInformation } from '../class/stop-time';
+import { AuthService } from "../auth/services/auth.service";
+import { UserService } from "../user/services/user.service";
+import { NoteService } from "../user/services/note.service";
+import { AlertService, Alert } from "../alert/services/alert.service";
 
-export interface TripDetail {
-    stopName: string;
-    scheduledArrival: string;
-    delay: number;
-    realtime: boolean;
-}
 /**
  * Component for displaying transport timetables for a specific stop.
  * Shows upcoming departures, calculating real-time delays or scheduled times.
@@ -17,30 +17,168 @@ export interface TripDetail {
  */
 @Component({
     selector: 'app-timetable',
-    imports: [DatePipe, DecimalPipe],
+    imports: [DatePipe, FormsModule, CommonModule],
     templateUrl: './timetable.html'
 })
-export class Timetable implements OnChanges {
+export class Timetable implements OnChanges, OnInit, OnDestroy {
     @Input({ required: true }) stop!: Stop;
 
-    public currentStopTimes: StopTime[] = [];
+    public currentStopTimes: StoptimeWithTripInfo[] = [];
     public isLoadingTimes: boolean = false;
     public timesError: string | null = null;
 
     public isModalOpen: boolean = false;
-    public selectedTripHeadsign: string = '';
-    public tripDetails: TripDetail[] = [];
+    public selectedTrip?: TripInformation = undefined;
+    public tripDetails: Stoptime[] = [];
     public isLoadingTrip: boolean = false;
 
-    //Endipoint backend
-    private baseUrl: string = 'http://localhost:3000/pois/stop/';
+    // ---New Variables for Note and Favourites---
+    public isLoggedIn: boolean = false;
+    private authSub!: Subscription;
 
-    constructor(private http: HttpClient, private cdr: ChangeDetectorRef) { }
+    public isFavourite: boolean = false;
+
+    public noteContent: string = "";
+    public savedNoteId: string | undefined = undefined;
+    public isLoadingNote: boolean = false;
+    public isNoteModalOpen: boolean = false;
+    public tempNoteContent: string = '';
+
+    public activeAlerts: Alert[] = [];
+    public isLoadingAlerts: boolean = false;
+    public isAlertsPanelOpen: boolean = false;
+
+    //Endipoint backend
+    private baseUrl: string = "http://localhost:3000/pois/stop/";
+
+    constructor(
+        private http: HttpClient,
+        private cdr: ChangeDetectorRef,
+        private authService: AuthService,
+        private userService: UserService,
+        private noteService: NoteService,
+        private alertService: AlertService,
+    ) { }
+
+    ngOnInit() {
+        this.authSub = this.authService.isLoggedIn$.subscribe(status => {
+            this.isLoggedIn = status;
+            if (this.isLoggedIn && this.stop) {
+                this.loadUserDataForStop();
+            }
+        });
+    }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes['stop'] && this.stop) {
+        if (changes["stop"] && this.stop) {
+            this.isAlertsPanelOpen = false;
             this.fetchStopTimes(this.stop.id);
+            this.loadAlerts();
+            if (this.isLoggedIn) {
+                this.loadUserDataForStop();
+            }
         }
+    }
+
+    ngOnDestroy() {
+        if (this.authSub) this.authSub.unsubscribe();
+    }
+
+    //---Notes and Favourites---
+    private loadUserDataForStop() {
+        this.isLoadingNote = true;
+
+        this.userService.getFavourites().subscribe({
+            next: (favourites) => {
+                this.isFavourite = favourites.some(fav => fav.id === this.stop.id || (fav as any)._id === this.stop.id);
+                this.cdr.detectChanges();
+            },
+            error: (err) => console.error("Errore caricamento preferiti", err)
+        });
+
+        // loads the note
+        this.noteService.getNoteForStop(this.stop.id).subscribe({
+            next: (note) => {
+                this.noteContent = note?.content || '';
+                this.savedNoteId = note?._id;
+                this.isLoadingNote = false;
+                this.cdr.detectChanges();
+            },
+            error: () => { this.isLoadingNote = false; }
+        });
+    }
+    public toggleFavourite(event: Event) {
+        event.stopPropagation();
+
+        this.isFavourite = !this.isFavourite;
+        this.cdr.detectChanges();
+
+        if (this.isFavourite) {
+            this.userService.addFavourite(this.stop.id).subscribe({
+                next: () => console.log('Preferito aggiunto!'),
+                error: (err) => {
+                    console.error('Errore aggiunta preferito', err);
+                    this.isFavourite = false; // Rollback in caso di errore del server
+                    this.cdr.detectChanges();
+                }
+            });
+        } else {
+            this.userService.removeFavourite(this.stop.id).subscribe({
+                next: () => console.log('Preferito rimosso!'),
+                error: (err) => {
+                    console.error('Errore rimozione preferito', err);
+                    this.isFavourite = true; // Rollback in caso di errore del server
+                    this.cdr.detectChanges();
+                }
+            });
+        }
+    }
+
+    toggleAlertsPanel(): void {
+        this.isAlertsPanelOpen = !this.isAlertsPanelOpen;
+    }
+
+
+    public openNoteModal(event: Event) {
+        event.stopPropagation();
+        this.tempNoteContent = this.noteContent; // Copia il testo attuale per modificarlo
+        this.isNoteModalOpen = true;
+    }
+
+    public closeNoteModal(event: Event) {
+        event.stopPropagation();
+        this.isNoteModalOpen = false;
+    }
+
+    public saveNote(event: Event) {
+        event.stopPropagation();
+
+        // If user empties the note --> delete note
+        if (!this.tempNoteContent.trim()) {
+            if (this.savedNoteId) {
+                this.isLoadingNote = true;
+                this.noteService.deleteNote(this.savedNoteId).subscribe(() => {
+                    this.noteContent = '';
+                    this.savedNoteId = undefined;
+                    this.isLoadingNote = false;
+                    this.isNoteModalOpen = false;
+                    this.cdr.detectChanges();
+                });
+            } else {
+                this.isNoteModalOpen = false;
+            }
+            return;
+        }
+
+        // otherwise save
+        this.isLoadingNote = true;
+        this.noteService.saveNote(this.stop.id, this.tempNoteContent).subscribe((res) => {
+            this.savedNoteId = res._id;
+            this.noteContent = this.tempNoteContent;
+            this.isLoadingNote = false;
+            this.isNoteModalOpen = false;
+            this.cdr.detectChanges();
+        });
     }
 
     private fetchStopTimes(stopId: string): void {
@@ -48,7 +186,7 @@ export class Timetable implements OnChanges {
         this.timesError = null;
         this.currentStopTimes = [];
 
-        this.http.get<StopTime[]>(`${this.baseUrl}${stopId}/stop-times`).subscribe({
+        this.http.get<StoptimeWithTripInfo[]>(`${this.baseUrl}${stopId}/stop-times`).subscribe({
             next: (data) => {
                 this.currentStopTimes = data;
                 this.isLoadingTimes = false;
@@ -63,16 +201,35 @@ export class Timetable implements OnChanges {
         });
     }
 
-    public openTripDetails(time: StopTime): void {
+    loadAlerts(): void {
+        this.isLoadingAlerts = true;
+        this.activeAlerts = [];
+
+        this.alertService.getActiveAlertsForStop(this.stop.id).subscribe({
+            next: (alerts) => {
+                this.activeAlerts = alerts;
+                this.isLoadingAlerts = false;
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error("Errore durante il caricamento degli avvisi", err);
+                this.isLoadingAlerts = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    public openTripDetails(time: StoptimeWithTripInfo): void {
         this.isModalOpen = true;
-        this.selectedTripHeadsign = time.headsign || 'Sconosciuta';
+        this.selectedTrip = time.tripInfo;
         this.isLoadingTrip = true;
         this.tripDetails = [];
         this.cdr.detectChanges();
 
-        const encodedTripId = encodeURIComponent(time.tripId);
+        const encodedTripId = encodeURIComponent(time.tripInfo.id);
+        const serviceDateTimestamp = Date.parse(time.tripInfo.serviceDate);
 
-        this.http.get<TripDetail[]>(`${this.baseUrl}trip/${encodedTripId}/details`).subscribe({
+        this.http.get<Stoptime[]>(`${this.baseUrl}trip/${encodedTripId}/${serviceDateTimestamp}/details`).subscribe({
             next: (data) => {
                 this.tripDetails = data;
                 this.isLoadingTrip = false;
@@ -86,19 +243,16 @@ export class Timetable implements OnChanges {
         });
     }
 
-    protected isUpcomingStop(stop: TripDetail, allStops: TripDetail[]): boolean {
+    protected isUpcomingStop(stop: Stoptime, allStops: Stoptime[]): boolean {
         const realtimeStopIndex = allStops.findIndex(s => s.realtime);
-        if(realtimeStopIndex === -1) {
+        if(realtimeStopIndex === -1 || this.selectedTrip?.id.startsWith("Trenitalia")) { // hack to prevent Trenitalia trips from breaking visulization, will need to go once vehicle positions are implemented
             const now = Date.now();
-            const stopTime = Date.parse(stop.scheduledArrival) + (stop.delay * 1000);
+            const stopTime = Date.parse(stop.scheduledDeparture) + (stop.departureDelay * 1000);
             return stopTime - now > 0;
         } else {
-            const delay = allStops.at(-1)!.delay; // workaround only for TT until vehicle positions get implemented (will probably break once Trenitalia realtime data gets added)
-            if(delay <= 0) {
-                return allStops.findIndex(s => s === stop) >= realtimeStopIndex;
-            } else {
-                return allStops.findIndex(s => s === stop) > realtimeStopIndex;
-            }
+            // workaround only for TT until vehicle positions get implemented
+            const delay = allStops.at(-1)!.departureDelay;
+            return allStops.findIndex(s => s === stop) >= realtimeStopIndex;
         }
     }
 

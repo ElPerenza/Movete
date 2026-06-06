@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Delete, Put, Body, Param, NotFoundException, HttpException, HttpStatus } from "@nestjs/common";
+import { Controller, Get, Post, Delete, Put, Body, Param, NotFoundException, HttpCode } from "@nestjs/common";
 import { StopService } from "../services/stop.service";
 import { OtpService } from "../../otp/services/otp.service";
-import { StopTime } from "../../otp/models/stop-time.model"
 import { StopDto, CreateStopDto, UpdateStopDto } from "../dto/stop.dto";
 import { SearchStopRequestDto } from "../dto/search-stop-request.dto";
 import { plainToInstance } from "class-transformer";
+import { Stoptime, StoptimeWithTripInfo } from "../../otp/types/otp-types";
 
 @Controller("pois/stop")
 export class StopController {
@@ -53,36 +53,27 @@ export class StopController {
     }
 
     @Post("/search")
+    @HttpCode(200)
     async search(@Body() request: SearchStopRequestDto): Promise<StopDto[]> {
         const filteredStops = await this.stopService.search(request);
         return plainToInstance(StopDto, filteredStops, { excludeExtraneousValues: true });
     }
 
     @Get("/:id/stop-times")
-    async getStopTimes(@Param("id") id: string): Promise<StopTime[]> {
-        // Search for stop in DB
+    async getStopTimes(@Param("id") id: string): Promise<StoptimeWithTripInfo[]> {
+
         const requestedStop = await this.stopService.findStopById(id);
         if (!requestedStop) {
-            throw new NotFoundException('Fermata non trovata');
+            throw new NotFoundException(`Stop ${id} does not exist`);
         }
 
-        // Pass all GTFS IDs to the service
-        const gtfsIds = requestedStop.otpStops;
-        if (!gtfsIds || gtfsIds.length === 0) {
-            throw new HttpException('Nessun ID GTFS associato', HttpStatus.BAD_REQUEST);
-        }
-
-        const times = await this.otpService.getStopTimes(gtfsIds);
-
-        // If using ClassSerializerInterceptor or want to filter values --> plainToInstance
-        return plainToInstance(StopTime, times);
+        const allStoptimes = await Promise.all(requestedStop.otpStops.map(async otpId => await this.otpService.getStoptimes(otpId, 30)));
+        // order by earliest departure time, ascending
+        return allStoptimes.flat().sort((st1, st2) => st1.stoptime.scheduledDeparture.getTime() - st2.stoptime.scheduledDeparture.getTime());
     }
 
-    @Get("/trip/:tripId/details")
-    async getTripDetails(@Param("tripId") tripId: string) {
-        if (!tripId) {
-            throw new HttpException('Trip ID mancante', HttpStatus.BAD_REQUEST);
-        }
-        return this.otpService.getTripDetails(tripId, this.otpService.formatAsYYYYMMDDD(new Date())); // TODO: shouldn't default to today's date
+    @Get("/trip/:tripId/:serviceDate/details")
+    async getTripDetails(@Param("tripId") tripId: string, @Param("serviceDate") serviceDate: number): Promise<Stoptime[]> {
+        return this.otpService.getTripStoptimes(tripId, new Date(serviceDate));
     }
 }

@@ -8,8 +8,10 @@ import * as polyline from '@mapbox/polyline';
 import { Stop } from "../class/stop";
 import { Park, ParkType } from "../class/park";
 import { Path } from "../path/path";
+
 import { Timetable } from "../timetable/timetable";
 import { environment } from "../../environments/environment";
+import { ActivatedRoute } from '@angular/router';
 
 import { AuthService } from "../auth/services/auth.service";
 import { Subscription } from 'rxjs';
@@ -77,7 +79,7 @@ export class Map implements AfterViewInit, OnInit {
     private authSub!: Subscription;
 
     //TODO verify if cdr have some impact on performance but is the only thing that make the navbar working dynamically
-    constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private authService: AuthService) { }
+    constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private authService: AuthService, private route: ActivatedRoute) { }
 
     public toggleSidebar(): void {
         this.showSidebar = !this.showSidebar;
@@ -105,7 +107,18 @@ export class Map implements AfterViewInit, OnInit {
 
     ngAfterViewInit(): void {
         this.initMap();
+
+
+        this.route.queryParams.subscribe(params => {
+            const preselectedStopId = params['stop'];
+
+            if (preselectedStopId) {
+                console.log("Devo auto-selezionare la fermata:", preselectedStopId);
+                this.handlePreselectedStop(preselectedStopId);
+            }
+        });
     }
+
     ngOnInit() {
         this.authSub = this.authService.isLoggedIn$.subscribe((status: boolean) => {
             this.isLoggedIn = status;
@@ -309,6 +322,44 @@ export class Map implements AfterViewInit, OnInit {
     }
 
     /**
+     * Handles stops selected from favourites
+     */
+    private handlePreselectedStop(stopId: string) {
+        this.http.get<Stop>(this.baseUrl + stopId).subscribe({
+            next: (stop) => {
+                if (!stop) return;
+
+                // checking if stop is already visible
+                const alreadyInList = this.currentStops.some(s => s.id === stop.id || (s as any)._id === stop.id);
+
+                if (!alreadyInList) {
+                    this.currentStops.unshift(stop);
+
+                    const marker = L.marker([stop.location.coordinates[1], stop.location.coordinates[0]]);
+                    marker.on('click', () => {
+                        this.selectStop(stop);
+                        this.showSidebar = true;
+                        this.cdr.detectChanges();
+                    });
+                    marker.addTo(this.stopsLayerMarkerGroup);
+                }
+
+                this.selectStop(stop);
+                this.showSidebar = true;
+
+                const currentZoom = this.map.getZoom();
+                const targetZoom = currentZoom >= 17 ? currentZoom : 17;
+                this.map.flyTo([stop.location.coordinates[1], stop.location.coordinates[0]], targetZoom, { animate: true, duration: 1.5 });
+
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error("Impossibile caricare la fermata preferita:", err);
+            }
+        });
+    }
+
+    /**
      * Helper method to generate custom HTML 'P' markers for parking spots.
      * @param isSelected whether this specific park marker is highlighted
      */
@@ -362,7 +413,6 @@ export class Map implements AfterViewInit, OnInit {
         })
         this.cdr.detectChanges();
     }
-
 
     /**
      * Display the content of the park that has been clicked on the navbar

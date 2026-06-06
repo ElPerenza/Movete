@@ -34,6 +34,13 @@ This repository is structured as an NPM workspace with two packages: `server`, a
   
   OTP_GRAPHQL_URL=http://localhost:8080/otp/gtfs/v1/ # URL to the OpenTripPlanner API. Change if started on a different port.
   
+  # Trentino Trasporti API url and authentication Base64 hash for Trentino Trasporti realtime data.
+  # The hash has never changed (and I doubt it will), but it's set as an environment variable if it ever needs to be changed.
+  TT_API_URL=https://app-tpl.tndigit.it/gtlservice/
+  TT_API_AUTH=bWl0dG1vYmlsZTplY0dzcC5SSEIz
+
+  VT_API_URL=http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/ # URL to the Viaggiatreno API for realtime data for Trenitalia services.
+
   PORT=<port> # Port to run the server on. Defaults to 3000 if not set.
   
   POPULATE_STOPS=<true|false> # Set to true if it's the first time running the server, it will load stop data from OTP into MongoDB (it will take a few minutes). After first run can be put to false.
