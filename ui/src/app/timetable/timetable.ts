@@ -1,23 +1,14 @@
-<<<<<<< HEAD
 import { Component, Input, OnChanges, SimpleChanges, ChangeDetectorRef, OnInit, OnDestroy } from "@angular/core";
-import { DatePipe, DecimalPipe, CommonModule } from "@angular/common";
+import { DatePipe, CommonModule } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { FormsModule } from "@angular/forms";
 import { Subscription } from "rxjs";
 import { Stop } from "../class/stop";
-import { StopTime } from "../class/stop-time";
+import { Stoptime, StoptimeWithTripInfo, TripInformation } from '../class/stop-time';
 import { AuthService } from "../auth/services/auth.service";
 import { UserService } from "../user/services/user.service";
 import { NoteService } from "../user/services/note.service";
 import { AlertService, Alert } from "../alert/services/alert.service";
-import { environment } from "../../environments/environment";
-=======
-import { Component, Input, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Stop } from '../class/stop';
-import { Stoptime, StoptimeWithTripInfo, TripInformation } from '../class/stop-time';
->>>>>>> 6830432f9a670f564a654d85eb4e17395e0ee76a
 
 /**
  * Component for displaying transport timetables for a specific stop.
@@ -25,15 +16,9 @@ import { Stoptime, StoptimeWithTripInfo, TripInformation } from '../class/stop-t
  * Triggers a backend call whenever the `stop` input property changes (via ngOnChanges).
  */
 @Component({
-<<<<<<< HEAD
-    selector: "app-timetable",
-    imports: [DatePipe, DecimalPipe, CommonModule, FormsModule],
-    templateUrl: "./timetable.html"
-=======
     selector: 'app-timetable',
-    imports: [DatePipe],
+    imports: [DatePipe, FormsModule, CommonModule],
     templateUrl: './timetable.html'
->>>>>>> 6830432f9a670f564a654d85eb4e17395e0ee76a
 })
 export class Timetable implements OnChanges, OnInit, OnDestroy {
     @Input({ required: true }) stop!: Stop;
@@ -207,9 +192,9 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
                 this.isLoadingTimes = false;
                 this.cdr.detectChanges();
             },
-            error: err => {
-                console.error("Error fetching stop times", err);
-                this.timesError = "Impossibile caricare gli orari in tempo reale.";
+            error: (err) => {
+                console.error('Error fetching stop times', err);
+                this.timesError = 'Impossibile caricare gli orari in tempo reale.';
                 this.isLoadingTimes = false;
                 this.cdr.detectChanges();
             }
@@ -250,7 +235,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
                 this.isLoadingTrip = false;
                 this.cdr.detectChanges();
             },
-            error: err => {
+            error: (err) => {
                 console.error(err);
                 this.isLoadingTrip = false;
                 this.cdr.detectChanges();
@@ -260,7 +245,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
 
     protected isUpcomingStop(stop: Stoptime, allStops: Stoptime[]): boolean {
         const realtimeStopIndex = allStops.findIndex(s => s.realtime);
-        if (realtimeStopIndex === -1 || this.selectedTrip?.id.startsWith("Trenitalia")) { // hack to prevent Trenitalia trips from breaking visulization, will need to go once vehicle positions are implemented
+        if(realtimeStopIndex === -1 || this.selectedTrip?.id.startsWith("Trenitalia")) { // hack to prevent Trenitalia trips from breaking visulization, will need to go once vehicle positions are implemented
             const now = Date.now();
             const stopTime = Date.parse(stop.scheduledDeparture) + (stop.departureDelay * 1000);
             return stopTime - now > 0;

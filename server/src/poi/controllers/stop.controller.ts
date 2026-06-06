@@ -74,9 +74,6 @@ export class StopController {
 
     @Get("/trip/:tripId/:serviceDate/details")
     async getTripDetails(@Param("tripId") tripId: string, @Param("serviceDate") serviceDate: number): Promise<Stoptime[]> {
-        if (!tripId) {
-            throw new HttpException('Trip ID mancante', HttpStatus.BAD_REQUEST);
-        }
         return this.otpService.getTripStoptimes(tripId, new Date(serviceDate));
     }
 }

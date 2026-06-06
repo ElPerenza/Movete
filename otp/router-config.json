@@ -1,22 +1,4 @@
 {
-<<<<<<< HEAD
-  "updaters" : [
-    {
-        "type" : "stop-time-updater",
-        "frequency" : "1m",
-        "backwardsDelayPropagationType" : "REQUIRED_NO_DATA",
-        "url" : "http://localhost:3000/gtfs-realtime/TrentinoTrasportiUrbano/trip-updates",
-        "feedId" : "TrentinoTrasportiUrbano"
-    },
-    {
-        "type" : "stop-time-updater",
-        "frequency" : "1m",
-        "backwardsDelayPropagationType" : "REQUIRED_NO_DATA",
-        "url" : "http://localhost:3000/gtfs-realtime/TrentinoTrasportiExtraurbano/trip-updates",
-        "feedId" : "TrentinoTrasportiExtraurbano"
-    }
-  ]
-=======
     "updaters" : [
         {
             "type" : "stop-time-updater",
@@ -40,5 +22,4 @@
             "feedId" : "Trenitalia"
         }
     ]
->>>>>>> 6830432f9a670f564a654d85eb4e17395e0ee76a
 }

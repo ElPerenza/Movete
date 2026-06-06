@@ -1,6 +1,6 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GraphQLClientService } from '../../graphql-client/services/graphql-client.service';
+import { GraphQLClientService } from '../../graphql-client/services/graphql-client.service'
 import { Stop, Stoptime, StoptimeType, StoptimeWithTripInfo, TripPathInformation } from '../types/otp-types';
 
 /**
@@ -13,7 +13,8 @@ interface TripDates {
 
 /**
  * Service responsible for accessing OpenTripPlanner data through its GraphQL API.
- * * For documentation regarding the raw GraphQL queries, see https://docs.opentripplanner.org/api/dev-2.x/graphql-gtfs/introduction
+ * 
+ * For documentation regarding the raw GraphQL queries, see https://docs.opentripplanner.org/api/dev-2.x/graphql-gtfs/introduction
  */
 @Injectable()
 export class OtpService {
@@ -35,12 +36,12 @@ export class OtpService {
     formatAsYYYYMMDDD(date: Date | number): string {
         const dateObj = typeof date === "object" ? date : new Date(date);
         let dateString = dateObj.getFullYear().toString();
-        if (dateObj.getMonth() + 1 >= 10) {
+        if(dateObj.getMonth() + 1 >= 10) {
             dateString += (dateObj.getMonth() + 1).toString();
         } else {
             dateString += `0${dateObj.getMonth() + 1}`;
         }
-        if (dateObj.getDate() >= 10) {
+        if(dateObj.getDate() >= 10) {
             dateString += dateObj.getDate().toString();
         } else {
             dateString += `0${dateObj.getDate()}`;
@@ -49,16 +50,12 @@ export class OtpService {
     }
 
     /**
-     * Retrieve a number of trip arrivals/departures for the given stop(s).
-     * Supports both a single stopId or an array of stopIds (for logical stops).
-     * @param stopIds OTP ID(s) of the stop
+     * Retrieve a number of trip arrivals/departures for the given stop.
+     * @param stopId OTP ID of the stop
      * @param limit the number of stop times to retrieve
-     * @returns the stop times for the given stops chronologically sorted
+     * @returns the stop times for the given stops, or an empty array if non were found
      */
-    async getStoptimes(stopIds: string | string[], limit: number = 30): Promise<StoptimeWithTripInfo[]> {
-        // Garantisce che sia sempre un array, mantenendo la compatibilità con entrambe le versioni
-        const ids = Array.isArray(stopIds) ? stopIds : [stopIds];
-
+    async getStoptimes(stopId: string, limit: number): Promise<StoptimeWithTripInfo[]> {
         const query = `
             query GetStopTimes($stopId: String!, $numDepartures: Int!) {
                 stop(id: $stopId) {
@@ -92,55 +89,68 @@ export class OtpService {
             }
         `;
 
-        try {
-            const fetchPromises = ids.map(async (stopId) => {
-                const data = await this.graphQlClient.makeQuery<any>(this.OTP_GRAPHQL_URL, query, { stopId, numDepartures: limit });
-
-                if (!data?.stop) {
-                    return [];
-                }
-
-                const stopName = data.stop.name;
-                return data.stop.stoptimesWithoutPatterns.map((st: any) => {
-                    let stopType: StoptimeType = 'INTERMEDIATE';
-                    if (st.stopPosition === st.trip.departureStoptime.stopPosition) {
-                        stopType = 'ORIGIN';
-                    } else if (st.stopPosition === st.trip.arrivalStoptime.stopPosition) {
-                        stopType = 'DESTINATION';
+        const data = await this.graphQlClient.makeQuery<{
+            stop?: {
+                name: string
+                stoptimesWithoutPatterns: {
+                    headsign: string
+                    scheduledArrival: number
+                    scheduledDeparture: number
+                    arrivalDelay: number
+                    departureDelay: number
+                    serviceDay: number
+                    realtime: boolean
+                    stopPosition: number
+                    trip: {
+                        gtfsId: string
+                        route: {
+                            shortName: string
+                        }
+                        departureStoptime: {
+                            stopPosition: number
+                        }
+                        arrivalStoptime: {
+                            stopPosition: number
+                            stop: {
+                                name: string
+                            }
+                        }
                     }
-
-                    return {
-                        stoptime: {
-                            stopName: stopName,
-                            scheduledArrival: new Date((st.serviceDay + st.scheduledArrival) * 1000),
-                            scheduledDeparture: new Date((st.serviceDay + st.scheduledDeparture) * 1000),
-                            arrivalDelay: st.arrivalDelay || 0,
-                            departureDelay: st.departureDelay || 0,
-                            realtime: st.realtime || false
-                        },
-                        tripInfo: {
-                            id: st.trip.gtfsId,
-                            headsign: st.headsign === "" ? st.trip.arrivalStoptime.stop.name : st.headsign, // if no headsign, use name of trip destination
-                            routeShortName: st.trip.route.shortName,
-                            serviceDate: new Date(st.serviceDay * 1000)
-                        },
-                        stopType: stopType
-                    };
-                });
-            });
-
-            const resultsArray = await Promise.all(fetchPromises);
-            const allStopTimes = resultsArray.flat();
-
-            // Riordina tutto cronologicamente come faceva il tuo branch
-            allStopTimes.sort((a, b) => a.stoptime.scheduledDeparture.getTime() - b.stoptime.scheduledDeparture.getTime());
-
-            return allStopTimes;
-
-        } catch (error) {
-            console.error("Failed to retrieve stop times:", error);
-            throw new HttpException('Internal error while retrieving transit data', HttpStatus.INTERNAL_SERVER_ERROR);
+                }[]
+            }
+        }>(this.OTP_GRAPHQL_URL, query, { stopId, numDepartures: limit });
+        if(!data.stop) {
+            return [];
         }
+
+        const stopName = data.stop.name;
+        return data.stop.stoptimesWithoutPatterns.map(st => {
+
+            let stopType: StoptimeType = 'INTERMEDIATE';
+            if(st.stopPosition === st.trip.departureStoptime.stopPosition) {
+                stopType = 'ORIGIN';
+            } else if(st.stopPosition === st.trip.arrivalStoptime.stopPosition) {
+                stopType = 'DESTINATION';
+            }
+
+            return {
+                stoptime: {
+                    stopName: stopName,
+                    scheduledArrival: new Date((st.serviceDay + st.scheduledArrival) * 1000),
+                    scheduledDeparture: new Date((st.serviceDay + st.scheduledDeparture) * 1000),
+                    arrivalDelay: st.arrivalDelay,
+                    departureDelay: st.departureDelay,
+                    realtime: st.realtime
+                },
+                tripInfo: {
+                    id: st.trip.gtfsId,
+                    headsign: st.headsign === "" ? st.trip.arrivalStoptime.stop.name : st.headsign, // if no headsign, use name of trip destination
+                    routeShortName: st.trip.route.shortName,
+                    serviceDate: new Date(st.serviceDay * 1000)
+                },
+                stopType: stopType
+            }
+        });
     }
 
     /**
@@ -149,7 +159,7 @@ export class OtpService {
      * @param serviceDate the service date for the stop times
      * @returns the trip's stoptimes, or an empty array if none were found
      */
-    async getTripStoptimes(tripId: string, serviceDate: Date | string): Promise<Stoptime[]> {
+    async getTripStoptimes(tripId: string, serviceDate: Date): Promise<Stoptime[]> {
         const query = `
             query GetTripDetails($tripId: String!, $serviceDate: String!) {
                 trip(id: $tripId) {
@@ -168,35 +178,40 @@ export class OtpService {
             }
         `;
 
-        try {
-            // Supporta sia oggetti Date che stringhe YYYYMMDD
-            const dateObj = typeof serviceDate === 'string' ? new Date(serviceDate.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')) : serviceDate;
-            const serviceDateString = this.formatAsYYYYMMDDD(dateObj);
-
-            const data = await this.graphQlClient.makeQuery<any>(this.OTP_GRAPHQL_URL, query, { tripId, serviceDate: serviceDateString });
-
-            // Il check introdotto in develop
-            if (!data?.trip || !data.trip.activeDates.includes(serviceDateString)) {
-                return [];
+        const serviceDateString = this.formatAsYYYYMMDDD(serviceDate);
+        const data = await this.graphQlClient.makeQuery<{
+            trip?: {
+                activeDates: string[]
+                stoptimesForDate: {
+                    stop: {
+                        name: string
+                    }
+                    scheduledArrival: number
+                    arrivalDelay: number
+                    scheduledDeparture: number
+                    departureDelay: number
+                    realtime: boolean
+                }[]
             }
-
-            const midnight = new Date(dateObj);
-            midnight.setHours(0, 0, 0, 0);
-
-            return data.trip.stoptimesForDate.map((st: any) => {
-                return {
-                    stopName: st.stop.name,
-                    scheduledArrival: new Date(midnight.getTime() + (st.scheduledArrival * 1000)),
-                    scheduledDeparture: new Date(midnight.getTime() + (st.scheduledDeparture * 1000)),
-                    arrivalDelay: st.arrivalDelay || 0,
-                    departureDelay: st.departureDelay || 0,
-                    realtime: st.realtime || false
-                };
-            });
-        } catch (error) {
-            console.error("Failed to retrieve trip details:", error);
-            throw new HttpException('Internal error while retrieving trip data', HttpStatus.INTERNAL_SERVER_ERROR);
+        }>(this.OTP_GRAPHQL_URL, query, { tripId, serviceDate: serviceDateString });
+        // stoptimesForDate() still returns data even if the trip is not active on the given date..... so we manually check
+        if(!data.trip || !data.trip.activeDates.includes(serviceDateString)) {
+            return [];
         }
+
+        const midnight = new Date(serviceDate);
+        midnight.setHours(0, 0, 0, 0);
+
+        return data.trip.stoptimesForDate.map(st => {
+            return {
+                stopName: st.stop.name,
+                scheduledArrival: new Date(midnight.getTime() + (st.scheduledArrival * 1000)),
+                scheduledDeparture: new Date(midnight.getTime() + (st.scheduledDeparture * 1000)),
+                arrivalDelay: st.arrivalDelay,
+                departureDelay: st.departureDelay,
+                realtime: st.realtime
+            };
+        });
     }
 
     /**
@@ -229,8 +244,8 @@ export class OtpService {
         const serviceDateString = this.formatAsYYYYMMDDD(serviceDate);
         const activeTrips: TripPathInformation[] = [];
         // not using Array.map and Promise.all as that seems to run the system out of available request sockets at times
-        for (const td of await this.getTripsDatesByFeed(feedId)) {
-            if (td.activeDates.includes(serviceDateString)) {
+        for(const td of await this.getTripsDatesByFeed(feedId)) {
+            if(td.activeDates.includes(serviceDateString)) {
                 activeTrips.push(await this.getTripPathInfo(td.tripId, serviceDateString));
             }
         }
@@ -244,7 +259,7 @@ export class OtpService {
      * @returns the trip's departure and arrival times
      */
     private async getTripPathInfo(tripId: string, serviceDate: string): Promise<TripPathInformation> {
-
+        
         const query = `
             query TripDepartureArrivalTimes($tripId: String!, $serviceDate: String!) {
                 trip(id: $tripId) {
@@ -264,7 +279,7 @@ export class OtpService {
                 }
             }
         `;
-        const { trip: tripTimes } = await this.graphQlClient.makeQuery<{
+        const { trip: tripTimes } = await this.graphQlClient.makeQuery<{ 
             trip: {
                 departureStoptime: {
                     serviceDay: number
@@ -274,8 +289,8 @@ export class OtpService {
                     scheduledArrival: number
                 }
                 stoptimesForDate: {
-                    stop: {
-                        gtfsId: string
+                    stop: { 
+                        gtfsId: string 
                     }
                     stopPosition: number
                 }[]

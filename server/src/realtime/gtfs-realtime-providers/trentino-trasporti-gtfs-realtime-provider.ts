@@ -1,13 +1,8 @@
 import { Logger } from "@nestjs/common";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { CronJob } from "cron";
-<<<<<<< HEAD
-import { TripDates, TripServiceDateInformation } from "../types/otp-types";
-import { OtpRealtimeService } from "../services/otp-realtime.service";
-=======
 import { OtpService } from "../../otp/services/otp.service";
 import { TripPathInformation } from "../../otp/types/otp-types";
->>>>>>> 6830432f9a670f564a654d85eb4e17395e0ee76a
 import { FeedEntitySchema, FeedHeader_Incrementality, FeedMessageSchema } from "../../generated/gtfs-realtime_pb";
 import { create, toBinary } from "@bufbuild/protobuf";
 import { TrentinoTrasportiApiService } from "../services/trentino-trasporti-api.service";
@@ -44,7 +39,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
         const job = new CronJob("0 0 2 * * *", async () => {
             try {
                 this.runningToday = await this.getTripsRunningToday();
-            } catch (err) {
+            } catch(err) {
                 this.logger.error(err);
             }
         });
@@ -56,7 +51,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
         const interval = setInterval(async () => {
             try {
                 await this.updateFeed();
-            } catch (err) {
+            } catch(err) {
                 this.logger.error(err);
             }
         }, 60000);
@@ -64,7 +59,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
     }
 
     get tripUpdatesFeed(): Uint8Array {
-        if (!this.feed) {
+        if(!this.feed) {
             return this.createEmptyFeed();
         }
         return this.feed;
@@ -88,7 +83,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
     private async updateFeed(): Promise<void> {
         const start = Date.now();
 
-        if (!this.runningToday) {
+        if(!this.runningToday) {
             this.runningToday = await this.getTripsRunningToday();
         }
 
@@ -96,11 +91,11 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
         const tripsCurrentlyRunning = this.runningToday
             .filter(tripInfo => {
                 // consider only trips that should be currently running (with some padding)
-                return now >= (tripInfo.departureTime - this.TRIP_SELECTION_PADDING) &&
-                    now <= (tripInfo.arrivalTime + this.TRIP_SELECTION_PADDING);
+                return now >= (tripInfo.departureTime - this.TRIP_SELECTION_PADDING) && 
+                        now <= (tripInfo.arrivalTime + this.TRIP_SELECTION_PADDING);
             })
             .map(tripInfo => tripInfo.tripId.substring(tripInfo.tripId.indexOf(":") + 1)); // remove feedId (OTP gtfs IDs -> feedId:tripId)
-
+        
         const trips = new Set(tripsCurrentlyRunning).union(this.trackedTrips);
         this.feed = await this.createTripUpdatesFeed(trips);
 
@@ -139,10 +134,10 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
         });
         const todayDate = this.otpService.formatAsYYYYMMDDD(new Date());
 
-        for (const tripId of trips) {
+        for(const tripId of trips) {
 
             const realtimeInfo = await this.ttApiService.getTripInfo(tripId);
-            if (realtimeInfo.delay == null || realtimeInfo.lastSequenceDetection === realtimeInfo.stopTimes.length) {
+            if(realtimeInfo.delay == null || realtimeInfo.lastSequenceDetection === realtimeInfo.stopTimes.length) {
                 // no realtime data (either lost signal or trip completed)
                 this.trackedTrips.delete(tripId);
                 continue;
