@@ -24,7 +24,7 @@ export class ParkController {
         return plainToInstance(ParkDto, insertedPark, {excludeExtraneousValues: true})
     }
 
-    @Get("/")
+    @Get("/:id")
     async get(@Param("id") id:string ): Promise<ParkDto> {
         const insertedPark = await this.parkService.findParkById(id);
         if (insertedPark === null) {
