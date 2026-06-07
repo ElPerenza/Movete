@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLClientService } from '../../graphql-client/services/graphql-client.service'
 import { Stop, Stoptime, StoptimeType, StoptimeWithTripInfo, TripPathInformation } from '../types/otp-types';
@@ -20,6 +20,8 @@ interface TripDates {
  */
 @Injectable()
 export class OtpService {
+
+    private readonly logger = new Logger(OtpService.name);
 
     private readonly OTP_GRAPHQL_URL: string;
 
@@ -180,6 +182,8 @@ export class OtpService {
             }
         `;
 
+        this.logger.debug(`Get stoptimes for trip ${tripId} on service date ${serviceDate}`);
+
         const serviceDateString = this.formatAsYYYYMMDDD(serviceDate);
         const data = await this.graphQlClient.makeQuery<{
             trip?: {
@@ -198,6 +202,7 @@ export class OtpService {
         }>(this.OTP_GRAPHQL_URL, query, { tripId, serviceDate: serviceDateString });
         // stoptimesForDate() still returns data even if the trip is not active on the given date..... so we manually check
         if(!data.trip || !data.trip.activeDates.includes(serviceDateString)) {
+            this.logger.debug("The trip does not run on this specific date!");
             return [];
         }
 
