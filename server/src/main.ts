@@ -7,7 +7,7 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
         logger: new ConsoleLogger({
             json: process.env["JSON_LOGS"] === "true",
-            logLevels: ['log']
+            logLevels: [process.env["LOG_LEVEL"] === "debug" ? "debug" : "log"]
         }),
     });
     app.enableVersioning({
