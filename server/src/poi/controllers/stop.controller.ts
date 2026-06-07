@@ -15,6 +15,45 @@ export class StopController {
         private otpService: OtpService
     ) { }
 
+    @Post("/feedback")
+    async createFeedback(@Body() feedback: StopFeedbackDto): Promise<StopFeedbackDto> {
+        const createdFeedback = await this.stopService.createFeedback(feedback);
+        return plainToInstance(StopFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Put("/feedback")
+    async updateFeedback(@Body() feedback: UpdateStopFeedbackDto): Promise<StopFeedbackDto> {
+        const createdFeedback = await this.stopService.updateFeedback(feedback);
+        return plainToInstance(StopFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Post("/trip/feedback")
+    async createTripFeedback(@Body() feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
+        const createdFeedback = await this.stopService.createTripFeedback(feedback);
+        return plainToInstance(TripFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Put("/trip/feedback")
+    async updateTripFeedback(@Body() feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
+        const createdFeedback = await this.stopService.updateTripFeedback(feedback);
+        return plainToInstance(TripFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Get("/trip/feedback/:tripId/:userId")
+    async getTripFeedback(@Param("tripId") tripId: string, @Param("userId") userId: string): Promise<TripFeedbackDto> {
+        const feedback = await this.stopService.getTripFeedback(tripId, userId);
+        if (feedback === null) {
+            throw new NotFoundException(`No feedback found for trip ${tripId} and user ${userId}`);
+        }
+        return plainToInstance(TripFeedbackDto, feedback, { excludeExtraneousValues: true });
+    }
+
+    @Get("/trip/feedback/:tripId/")
+    async getAvgTripFeedback(@Param("tripId") tripId: string): Promise<number> {
+        const feedback = await this.stopService.getAvgTripFeedback(tripId);
+        return feedback;
+    }
+
     @Post("/")
     async create(@Body() stop: CreateStopDto): Promise<StopDto> {
         const insertedStop = await this.stopService.create(stop);
@@ -79,27 +118,5 @@ export class StopController {
         return this.otpService.getTripStoptimes(tripId, new Date(serviceDate));
     }
 
-    @Post("/feedback")
-    async createFeedback(@Body() feedback: StopFeedbackDto): Promise<StopFeedbackDto> {
-        const createdFeedback = await this.stopService.createFeedback(feedback);
-        return plainToInstance(StopFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
-    }
-
-    @Put("/feedback")
-    async updateFeedback(@Body() feedback: UpdateStopFeedbackDto): Promise<StopFeedbackDto> {
-        const createdFeedback = await this.stopService.updateFeedback(feedback);
-        return plainToInstance(StopFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
-    }
-
-    @Post("/trip/feedback")
-    async createTripFeedback(@Body() feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
-        const createdFeedback = await this.stopService.createTripFeedback(feedback);
-        return plainToInstance(TripFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
-    }
-
-    @Put("/trip/feedback")
-    async updateTripFeedback(@Body() feedback: UpdateTripFeedbackDto): Promise<TripFeedbackDto> {
-        const createdFeedback = await this.stopService.updateTripFeedback(feedback);
-        return plainToInstance(TripFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
-    }
+    
 }

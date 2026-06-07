@@ -9,6 +9,9 @@ export class TripFeedback {
     tripId: string;
 
     @Prop({ required: true })
+    headsign: string;
+
+    @Prop({ required: true })
     userId: string;
 
     @Prop({ required: true, min: 1, max: 10 })

@@ -10,7 +10,7 @@ export class TripFeedbackDto {
 
     @Expose()
     @IsNotEmpty()
-    stopId: string;
+    headsign: string;
 
     @Expose()
     @IsNotEmpty()

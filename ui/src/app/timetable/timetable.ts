@@ -51,6 +51,15 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     //Endipoint backend
     private baseUrl: string = "http://localhost:3000/pois/stop/";
 
+    public selectedScore: number = 0;
+    public isSubmittingFeedback: boolean = false;
+    public feedbackSuccess: boolean = false;
+    public existingFeedbackScore: number | null = null;
+    public isLoadingFeedback: boolean = false;
+    public isEditingFeedback: boolean = false;
+    public isFeedbackSectionOpen: boolean = false;
+    public averageAffollamento: number = 0;
+
     constructor(
         private http: HttpClient,
         private cdr: ChangeDetectorRef,
@@ -224,7 +233,18 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         this.selectedTrip = time.tripInfo;
         this.isLoadingTrip = true;
         this.tripDetails = [];
-        this.cdr.detectChanges();
+
+        this.selectedScore = 0;
+        this.feedbackSuccess = false;
+        this.existingFeedbackScore = null;
+        this.averageAffollamento = 0;
+        if (time.tripInfo?.id) {
+            this.userService.getAvgTripFeedback(time.tripInfo.id)
+                .subscribe((avg: number) => {
+                    this.averageAffollamento = avg || 0;
+                    this.cdr.detectChanges();
+                })
+        }
 
         const encodedTripId = encodeURIComponent(time.tripInfo.id);
         const serviceDateTimestamp = Date.parse(time.tripInfo.serviceDate);
@@ -241,6 +261,24 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
                 this.cdr.detectChanges();
             }
         });
+
+        if (this.isLoggedIn) {
+        this.isLoadingFeedback = true;
+        this.userService.getTripFeedback(time.tripInfo.id).subscribe({
+            next: (fb) => {
+                this.isLoadingFeedback = false;
+                if (fb && fb.feedback) {
+                    this.existingFeedbackScore = fb.feedback;
+                    this.selectedScore = fb.feedback;
+                }
+                this.cdr.detectChanges();
+            },
+            error: () => {
+                this.isLoadingFeedback = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
     }
 
     protected isUpcomingStop(stop: Stoptime, allStops: Stoptime[]): boolean {
@@ -259,5 +297,60 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     public closeModal(): void {
         this.isModalOpen = false;
         this.tripDetails = [];
+        this.selectedScore = 0;
+        this.feedbackSuccess = false;
+        this.isSubmittingFeedback = false;
+        this.existingFeedbackScore = null;
+        this.isLoadingFeedback = false;
+        this.isEditingFeedback = false;
+        this.averageAffollamento = 0;
     }
+
+    public setScore(score: number, event: Event): void {
+        event.stopPropagation();
+        if (!this.isEditingFeedback && this.existingFeedbackScore !== null) return;
+        if (this.isSubmittingFeedback || this.feedbackSuccess) return;
+
+        this.selectedScore = score;
+        this.cdr.detectChanges();
+    }
+
+    public enableEditing(event: Event): void {
+        event.stopPropagation();
+        this.isEditingFeedback = true;
+        this.cdr.detectChanges();
+    }
+
+    toggleFeedbackSection(event: Event): void {
+        event.stopPropagation();
+        this.isFeedbackSectionOpen = !this.isFeedbackSectionOpen;
+        this.cdr.detectChanges();
+    }
+
+    public submitFeedback(): void {
+        if (!this.selectedTrip || this.selectedScore < 1 || this.selectedScore > 10) return;
+
+        this.isSubmittingFeedback = true;
+        this.cdr.detectChanges();
+
+        const request$ = this.existingFeedbackScore !== null
+        ? this.userService.updateTripFeedback(this.selectedTrip.id, this.selectedTrip.headsign, this.selectedScore)
+        : this.userService.sendTripFeedback(this.selectedTrip.id, this.selectedTrip.headsign, this.selectedScore);
+
+        request$.subscribe({
+            next: () => {
+                this.isSubmittingFeedback = false;
+                this.feedbackSuccess = true;
+                this.existingFeedbackScore = this.selectedScore; // Update historical value reference
+                this.isEditingFeedback = false;
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error("Failed to submit/update trip feedback", err);
+                this.isSubmittingFeedback = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
 }
