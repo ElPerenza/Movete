@@ -4,21 +4,21 @@
             "type" : "stop-time-updater",
             "frequency" : "1m",
             "backwardsDelayPropagationType" : "REQUIRED_NO_DATA",
-            "url" : "http://localhost:3000/v1/gtfs-realtime/TrentinoTrasportiUrbano/trip-updates",
+            "url" : "https://movete.onrender.com/v1/gtfs-realtime/TrentinoTrasportiUrbano/trip-updates",
             "feedId" : "TrentinoTrasportiUrbano"
         },
         {
             "type" : "stop-time-updater",
             "frequency" : "1m",
             "backwardsDelayPropagationType" : "REQUIRED_NO_DATA",
-            "url" : "http://localhost:3000/v1/gtfs-realtime/TrentinoTrasportiExtraurbano/trip-updates",
+            "url" : "https://movete.onrender.com/v1/gtfs-realtime/TrentinoTrasportiExtraurbano/trip-updates",
             "feedId" : "TrentinoTrasportiExtraurbano"
         },
         {
             "type" : "stop-time-updater",
             "frequency" : "1m",
             "backwardsDelayPropagationType" : "REQUIRED_NO_DATA",
-            "url" : "http://localhost:3000/v1/gtfs-realtime/Trenitalia/trip-updates",
+            "url" : "https://movete.onrender.com/v1/gtfs-realtime/Trenitalia/trip-updates",
             "feedId" : "Trenitalia"
         }
     ]

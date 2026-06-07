@@ -9,6 +9,7 @@ import { AuthService } from "../auth/services/auth.service";
 import { UserService } from "../user/services/user.service";
 import { NoteService } from "../user/services/note.service";
 import { AlertService, Alert } from "../alert/services/alert.service";
+import { environment } from "../../environments/environment";
 
 /**
  * Component for displaying transport timetables for a specific stop.
@@ -49,7 +50,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     public isAlertsPanelOpen: boolean = false;
 
     //Endipoint backend
-    private baseUrl: string = "http://localhost:3000/pois/stop/";
+    private baseUrl: string = new URL("pois/stop/", environment.apiUrl).href;
 
     constructor(
         private http: HttpClient,

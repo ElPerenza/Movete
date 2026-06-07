@@ -1,4 +1,4 @@
-import { ValidationPipe, ConsoleLogger } from "@nestjs/common";
+import { ValidationPipe, ConsoleLogger, VersioningType } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import session from "express-session";
@@ -9,6 +9,10 @@ async function bootstrap() {
             json: process.env["JSON_LOGS"] === "true",
             logLevels: ['log']
         }),
+    });
+    app.enableVersioning({
+        type: VersioningType.URI,
+        defaultVersion: "1"
     });
     app.useGlobalPipes(
         new ValidationPipe({
