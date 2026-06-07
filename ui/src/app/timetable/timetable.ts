@@ -59,6 +59,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     public isEditingFeedback: boolean = false;
     public isFeedbackSectionOpen: boolean = false;
     public averageAffollamento: number = 0;
+    public selectedTripArrivalDate: string | null = null;
 
     constructor(
         private http: HttpClient,
@@ -238,6 +239,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         this.feedbackSuccess = false;
         this.existingFeedbackScore = null;
         this.averageAffollamento = 0;
+        this.selectedTripArrivalDate = time.stoptime?.scheduledArrival || null;
         if (time.tripInfo?.id) {
             this.userService.getAvgTripFeedback(time.tripInfo.id)
                 .subscribe((avg: number) => {
@@ -245,6 +247,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
                     this.cdr.detectChanges();
                 })
         }
+
 
         const encodedTripId = encodeURIComponent(time.tripInfo.id);
         const serviceDateTimestamp = Date.parse(time.tripInfo.serviceDate);
@@ -263,22 +266,25 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         });
 
         if (this.isLoggedIn) {
-        this.isLoadingFeedback = true;
-        this.userService.getTripFeedback(time.tripInfo.id).subscribe({
-            next: (fb) => {
-                this.isLoadingFeedback = false;
-                if (fb && fb.feedback) {
-                    this.existingFeedbackScore = fb.feedback;
-                    this.selectedScore = fb.feedback;
+            const feedbackDateString = this.selectedTripArrivalDate || new Date().toISOString();
+            const dateObj = new Date(feedbackDateString);
+            const currentDay = dateObj.getDay() === 0 ? 7 : dateObj.getDay();
+            this.isLoadingFeedback = true;
+            this.userService.getTripFeedback(time.tripInfo.id, currentDay).subscribe({
+                next: (fb) => {
+                    this.isLoadingFeedback = false;
+                    if (fb && fb.feedback) {
+                        this.existingFeedbackScore = fb.feedback;
+                        this.selectedScore = fb.feedback;
+                    }
+                    this.cdr.detectChanges();
+                },
+                error: () => {
+                    this.isLoadingFeedback = false;
+                    this.cdr.detectChanges();
                 }
-                this.cdr.detectChanges();
-            },
-            error: () => {
-                this.isLoadingFeedback = false;
-                this.cdr.detectChanges();
-            }
-        });
-    }
+            });
+        }
     }
 
     protected isUpcomingStop(stop: Stoptime, allStops: Stoptime[]): boolean {
@@ -304,6 +310,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         this.isLoadingFeedback = false;
         this.isEditingFeedback = false;
         this.averageAffollamento = 0;
+        this.selectedTripArrivalDate = null;
     }
 
     public setScore(score: number, event: Event): void {
@@ -333,9 +340,13 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         this.isSubmittingFeedback = true;
         this.cdr.detectChanges();
 
+        const feedbackDateString = this.selectedTripArrivalDate || new Date().toISOString();
+        const dateObj = new Date(feedbackDateString);
+        const currentDay = dateObj.getDay() === 0 ? 7 : dateObj.getDay(); // Convert Sunday from 0 to 7 for ISO standard
+
         const request$ = this.existingFeedbackScore !== null
-        ? this.userService.updateTripFeedback(this.selectedTrip.id, this.selectedTrip.headsign, this.selectedScore)
-        : this.userService.sendTripFeedback(this.selectedTrip.id, this.selectedTrip.headsign, this.selectedScore);
+        ? this.userService.updateTripFeedback(this.selectedTrip.id, this.selectedTrip.headsign, this.selectedScore, currentDay)
+        : this.userService.sendTripFeedback(this.selectedTrip.id, this.selectedTrip.headsign, this.selectedScore, currentDay);
 
         request$.subscribe({
             next: () => {

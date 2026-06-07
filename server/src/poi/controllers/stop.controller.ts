@@ -39,11 +39,11 @@ export class StopController {
         return plainToInstance(TripFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
     }
 
-    @Get("/trip/feedback/:tripId/:userId")
-    async getTripFeedback(@Param("tripId") tripId: string, @Param("userId") userId: string): Promise<TripFeedbackDto> {
-        const feedback = await this.stopService.getTripFeedback(tripId, userId);
+    @Get("/trip/feedback/:tripId/:userId/:day")
+    async getTripFeedback(@Param("tripId") tripId: string, @Param("userId") userId: string, @Param("day") day: number): Promise<TripFeedbackDto | null> {
+        const feedback = await this.stopService.getTripFeedback(tripId, userId, day);
         if (feedback === null) {
-            throw new NotFoundException(`No feedback found for trip ${tripId} and user ${userId}`);
+            return null;
         }
         return plainToInstance(TripFeedbackDto, feedback, { excludeExtraneousValues: true });
     }

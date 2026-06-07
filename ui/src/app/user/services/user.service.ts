@@ -25,12 +25,10 @@ export class UserService {
         return this.http.delete(`${this.baseUrl}/favourites/${stopId}`);
     }
 
-    sendTripFeedback(tripId: string, headsign: string, score: number): Observable<any> {
+    sendTripFeedback(tripId: string, headsign: string, score: number, currentDay: number): Observable<any> {
 
         const currentUserId = this.authService.getCurrentUser().userId;
-        // Determine current ISO weekday standard (1 = Monday ... 7 = Sunday)
-        let currentDay = new Date().getDay();
-        if (currentDay === 0) currentDay = 7; 
+
 
         const payload = {
             tripId: tripId,
@@ -44,11 +42,9 @@ export class UserService {
         return this.http.post(`${this.baseStopUrl}/trip/feedback`, payload);
     }
 
-    updateTripFeedback(tripId: string, headsign: string, score: number): Observable<any> {
+    updateTripFeedback(tripId: string, headsign: string, score: number, currentDay: number): Observable<any> {
         const currentUserId = this.authService.getCurrentUser().userId;
         
-        let currentDay = new Date().getDay();
-        if (currentDay === 0) currentDay = 7; 
 
         const payload = {
             tripId: tripId,
@@ -62,11 +58,12 @@ export class UserService {
         return this.http.put(`${this.baseStopUrl}/trip/feedback`, payload);
     }
 
-    getTripFeedback(tripId: string): Observable<any> {
+    getTripFeedback(tripId: string, day: number): Observable<any> {
         const currentUserId = this.authService.getCurrentUser().userId;
         const encodedTripId = encodeURIComponent(tripId);
         const encodedUserId = encodeURIComponent(currentUserId);
-        return this.http.get(`${this.baseStopUrl}/trip/feedback/${encodedTripId}/${encodedUserId}`);
+        const encodedDay = encodeURIComponent(day.toString());
+        return this.http.get(`${this.baseStopUrl}/trip/feedback/${encodedTripId}/${encodedUserId}/${encodedDay}`);
     }
 
     getAvgTripFeedback(tripId: string): Observable<number> {

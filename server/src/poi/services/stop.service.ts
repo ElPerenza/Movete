@@ -176,14 +176,16 @@ export class StopService implements OnApplicationBootstrap {
         return updatedDocument;
     }
 
-    async getTripFeedback(tripId: string, userId: string): Promise<TripFeedbackDocument | null> {
-        const query = this.TripFeedbackModel.findOne({ tripId: tripId, userId: userId }).exec();
+    async getTripFeedback(tripId: string, userId: string, day: number): Promise<TripFeedbackDocument | null> {
+        const query = this.TripFeedbackModel.findOne({ tripId: tripId, userId: userId, day: day}).exec();
         return query;
     }
 
     async getAvgTripFeedback(tripId: string): Promise<number> {
+        const today = new Date().getDay();
+        const currentDayOfWeek = today === 0 ? 7 : today;
         const result = await this.TripFeedbackModel.aggregate([
-            { $match: { tripId: tripId } },
+            { $match: { tripId: tripId, day: currentDayOfWeek } },
             { $group: { _id: "$tripId", avgFeedback: { $avg: "$feedback" } } },
             { $project: { avgFeedback: { $round: ["$avgFeedback", 2] }}
         }
