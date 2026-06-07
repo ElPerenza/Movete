@@ -6,6 +6,10 @@ export class TripFeedbackDto {
 
     @Expose()
     @IsNotEmpty()
+    tripId: string;
+
+    @Expose()
+    @IsNotEmpty()
     stopId: string;
 
     @Expose()

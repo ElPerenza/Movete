@@ -7,6 +7,8 @@ import { SearchStopRequestDto } from "../dto/search-stop-request.dto";
 import { ConfigService } from "@nestjs/config";
 import { OtpService } from "../../otp/services/otp.service";
 import { Point } from "../../common/point";
+import { StopFeedbackDto, UpdateStopFeedbackDto } from "../dto/stop-feedback.dto";
+import { TripFeedbackDto, UpdateTripFeedbackDto } from "../dto/trip-feedback.dto";
 
 @Injectable()
 export class StopService implements OnApplicationBootstrap {
@@ -141,5 +143,25 @@ export class StopService implements OnApplicationBootstrap {
         }
 
         this.logger.log(`Stop initialization complete: added ${stopsAdded} of ${otpStops.length} stops present in OpenTripPlanner`);
+    }
+
+    async createFeedback(feedback: StopFeedbackDto): Promise<StopFeedbackDto> {
+        // TODO implement
+        return feedback;
+    }
+
+    async updateFeedback(feedback: UpdateStopFeedbackDto): Promise<StopFeedbackDto> {
+        // TODO implement
+        return null as any;
+    }
+
+    async createTripFeedback(feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
+        // TODO implement
+        return feedback;
+    }
+    
+    async updateTripFeedback(feedback: UpdateTripFeedbackDto): Promise<TripFeedbackDto> {
+        // TODO implement
+        return null as any;
     }
 }

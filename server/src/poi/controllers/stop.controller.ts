@@ -93,13 +93,13 @@ export class StopController {
 
     @Post("/trip/feedback")
     async createTripFeedback(@Body() feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
-        const createdFeedback = await this.stopService.createFeedback(feedback);
+        const createdFeedback = await this.stopService.createTripFeedback(feedback);
         return plainToInstance(TripFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
     }
 
     @Put("/trip/feedback")
     async updateTripFeedback(@Body() feedback: UpdateTripFeedbackDto): Promise<TripFeedbackDto> {
-        const createdFeedback = await this.stopService.updateFeedback(feedback);
+        const createdFeedback = await this.stopService.updateTripFeedback(feedback);
         return plainToInstance(TripFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
     }
 }

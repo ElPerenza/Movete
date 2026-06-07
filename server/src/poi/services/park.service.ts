@@ -8,6 +8,7 @@ import { ConfigService } from "@nestjs/config";
 import { OtpService } from "../../otp/services/otp.service";
 import { Point } from "../../common/point";
 import { throwError } from "rxjs";
+import { ParkFeedbackDto, UpdateParkFeedbackDto } from "../dto/park-feedback.dto";
 
 @Injectable()
 export class ParkingService implements OnApplicationBootstrap {
@@ -237,5 +238,15 @@ export class ParkingService implements OnApplicationBootstrap {
         }
 
         this.logger.log(`Bike park initialization complete: added ${parksAdded} of ${otpBikeParks.length} bike parks present in OpenTripPlanner`);
+    }
+
+    async createFeedback(feedback: ParkFeedbackDto): Promise<ParkFeedbackDto> {
+        // TODO implement
+        return feedback;
+    }
+
+    async updateFeedback(feedback: UpdateParkFeedbackDto): Promise<ParkFeedbackDto> {
+        // TODO implement
+        return null as any;    
     }
 }
