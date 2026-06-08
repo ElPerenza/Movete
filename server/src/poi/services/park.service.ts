@@ -1,5 +1,5 @@
 import { Model } from "mongoose";
-import { Logger, Injectable, OnApplicationBootstrap } from "@nestjs/common";
+import { Logger, Injectable, OnApplicationBootstrap, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Park, ParkDocument, ParkType } from "../models/park.schema"
 import { CreateParkDto, UpdateParkDto } from "../dto/park.dto";
@@ -8,13 +8,15 @@ import { ConfigService } from "@nestjs/config";
 import { OtpService } from "../../otp/services/otp.service";
 import { Point } from "../../common/point";
 import { throwError } from "rxjs";
-import { ParkFeedbackDto, UpdateParkFeedbackDto } from "../dto/park-feedback.dto";
+import { ParkFeedbackDto } from "../dto/park-feedback.dto";
+import { ParkFeedback, ParkFeedbackDocument } from "../models/parkFeedback.schema";
 
 @Injectable()
 export class ParkingService implements OnApplicationBootstrap {
     private readonly logger = new Logger(ParkingService.name, { timestamp: true });
     constructor(
         @InjectModel(Park.name) private parkModel: Model<Park>,
+        @InjectModel(ParkFeedback.name) private ParkFeedbackModel: Model<ParkFeedbackDto>,
         private readonly configService: ConfigService,
         private readonly otpService: OtpService
     ) {}
@@ -240,13 +242,69 @@ export class ParkingService implements OnApplicationBootstrap {
         this.logger.log(`Bike park initialization complete: added ${parksAdded} of ${otpBikeParks.length} bike parks present in OpenTripPlanner`);
     }
 
-    async createFeedback(feedback: ParkFeedbackDto): Promise<ParkFeedbackDto> {
-        // TODO implement
-        return feedback;
+    async createParkFeedback(feedback: ParkFeedbackDto): Promise<ParkFeedbackDto> {
+        this.logger.debug(`Creating Park feedback with the given params: ${JSON.stringify(feedback)}`);
+        return new this.ParkFeedbackModel(feedback).save();
     }
 
-    async updateFeedback(feedback: UpdateParkFeedbackDto): Promise<ParkFeedbackDto> {
-        // TODO implement
-        return null as any;    
+    async updateParkFeedback(feedback: ParkFeedbackDto): Promise<ParkFeedbackDocument | null> {
+        const updatedDocument = await this.ParkFeedbackModel.findOneAndUpdate(
+            { parkId: feedback.parkId, userId: feedback.userId, day: feedback.day },
+            { $set: feedback },
+            { new: true, runValidators: true } // Ritorna il documento modificato ed esegue i validatori del DTO
+        ).exec();
+
+        if (!updatedDocument) {
+            throw new NotFoundException(`Impossibile trovare il feedback del parcheggio da aggiornare.`);
+        }
+        this.logger.log(updatedDocument);
+        return updatedDocument;
+    }
+
+    async getParkFeedback(parkId: string, userId: string, day: number): Promise<ParkFeedbackDocument[] | null> {
+        const query = this.ParkFeedbackModel.find({ parkId: parkId, userId: userId, day: day}).exec();
+        return query;
+    }
+
+    async getAvgParkFeedback(parkId: string, day: number):  Promise<{ hour: number; avgFeedback: number }[]> {
+        
+        const result = await this.ParkFeedbackModel.aggregate([
+            { 
+                $match: { 
+                    parkId: parkId, 
+                    day: day 
+                } 
+            },
+            { 
+                $group: { 
+                    _id: "$hour", 
+                    avgFeedback: { $avg: "$feedback" } 
+                } 
+            },
+            { 
+                $project: { 
+                    _id: 0,
+                    hour: "$_id",
+                    avgFeedback: { $round: ["$avgFeedback", 1] } 
+                } 
+            },
+            { 
+                $sort: { hour: 1 }
+            }
+        ]).exec();
+
+        this.logger.log("result: " + result);
+        this.logger.log("day: " + day);
+        this.logger.log("parkId: " + parkId);
+        const hourlyData = [];
+        for (let h = 6; h <= 23; h++) {
+            const found = result.find(r => r.hour === h);
+            hourlyData.push({
+                hour: h,
+                avgFeedback: found ? found.avgFeedback : 0 // 0 significa "nessun dato" o "vuoto"
+            });
+        }
+
+        return hourlyData;
     }
 }

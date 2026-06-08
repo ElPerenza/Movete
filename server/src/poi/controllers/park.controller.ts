@@ -4,7 +4,7 @@ import { OtpService } from "../../otp/services/otp.service";
 import { UpdateParkDto, CreateParkDto, ParkDto } from "../dto/park.dto";
 import { SearchParkRequestDto } from "../dto/search-park-request.dto";
 import { plainToInstance } from "class-transformer";
-import { ParkFeedbackDto, UpdateParkFeedbackDto } from "../dto/park-feedback.dto";
+import { ParkFeedbackDto, } from "../dto/park-feedback.dto";
 
 @Controller("pois/park")
 export class ParkController {
@@ -12,6 +12,36 @@ export class ParkController {
         private parkService: ParkingService,
         private otpService: OtpService
     ) { }
+
+    @Post("/feedback")
+    async createParkFeedback(@Body() feedback: ParkFeedbackDto): Promise<ParkFeedbackDto> {
+        const createdFeedback = await this.parkService.createParkFeedback(feedback);
+        return plainToInstance(ParkFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Put("/feedback")
+    async updateParkFeedback(@Body() feedback: ParkFeedbackDto): Promise<ParkFeedbackDto> {
+        const createdFeedback = await this.parkService.updateParkFeedback(feedback);
+        return plainToInstance(ParkFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Get("/feedback/:parkId/distribution/:day")
+    async getAvgParkFeedback(@Param("parkId") parkId: string, @Param("day") day: number): Promise<{ hour: number; avgFeedback: number }[]> {
+        const feedback = await this.parkService.getAvgParkFeedback(parkId, day);
+        if (feedback === null) {
+            throw new NotFoundException();
+        }
+        return feedback;
+    }
+
+    @Get("/feedback/:parkId/:userId/:day/")
+    async getParkFeedback(@Param("parkId") parkId: string, @Param("userId") userId: string, @Param("day") day: number): Promise<ParkFeedbackDto[] | null> {
+        const feedback = await this.parkService.getParkFeedback(parkId, userId, day);
+        if (feedback === null) {
+            throw new NotFoundException();
+        }
+        return plainToInstance(ParkFeedbackDto, feedback, { excludeExtraneousValues: true });
+    }
 
     @Post("/")
     async create(@Body() park: CreateParkDto): Promise<ParkDto> {
@@ -59,15 +89,5 @@ export class ParkController {
         return plainToInstance(ParkDto, filteredParks, { excludeExtraneousValues: true });
     }
 
-    @Post("/trip/feedback")
-    async createTripFeedback(@Body() feedback: ParkFeedbackDto): Promise<ParkFeedbackDto> {
-        const createdFeedback = await this.parkService.createFeedback(feedback);
-        return plainToInstance(ParkFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
-    }
-
-    @Put("/trip/feedback")
-    async updateTripFeedback(@Body() feedback: UpdateParkFeedbackDto): Promise<ParkFeedbackDto> {
-        const createdFeedback = await this.parkService.updateFeedback(feedback);
-        return plainToInstance(ParkFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
-    }
+    
 }

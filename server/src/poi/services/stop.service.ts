@@ -7,8 +7,8 @@ import { SearchStopRequestDto } from "../dto/search-stop-request.dto";
 import { ConfigService } from "@nestjs/config";
 import { OtpService } from "../../otp/services/otp.service";
 import { Point } from "../../common/point";
-import { StopFeedbackDto, UpdateStopFeedbackDto } from "../dto/stop-feedback.dto";
-import { TripFeedbackDto, UpdateTripFeedbackDto } from "../dto/trip-feedback.dto";
+import { StopFeedbackDto } from "../dto/stop-feedback.dto";
+import { TripFeedbackDto } from "../dto/trip-feedback.dto";
 import { TripFeedback, TripFeedbackDocument } from "../models/tripFeedback.shema";
 
 @Injectable()
@@ -147,16 +147,6 @@ export class StopService implements OnApplicationBootstrap {
         this.logger.log(`Stop initialization complete: added ${stopsAdded} of ${otpStops.length} stops present in OpenTripPlanner`);
     }
 
-    async createFeedback(feedback: StopFeedbackDto): Promise<StopFeedbackDto> {
-        // TODO implement
-        return feedback;
-    }
-
-    async updateFeedback(feedback: UpdateStopFeedbackDto): Promise<StopFeedbackDto> {
-        // TODO implement
-        return null as any;
-    }
-
     async createTripFeedback(feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
         this.logger.debug(`Creating Trip feedback with the given params: ${feedback}`)
         return new this.TripFeedbackModel(feedback).save();
@@ -181,11 +171,9 @@ export class StopService implements OnApplicationBootstrap {
         return query;
     }
 
-    async getAvgTripFeedback(tripId: string): Promise<number> {
-        const today = new Date().getDay();
-        const currentDayOfWeek = today === 0 ? 7 : today;
+    async getAvgTripFeedback(tripId: string, day: number): Promise<number> {
         const result = await this.TripFeedbackModel.aggregate([
-            { $match: { tripId: tripId, day: currentDayOfWeek } },
+            { $match: { tripId: tripId, day: day } },
             { $group: { _id: "$tripId", avgFeedback: { $avg: "$feedback" } } },
             { $project: { avgFeedback: { $round: ["$avgFeedback", 2] }}
         }

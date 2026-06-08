@@ -5,8 +5,7 @@ import { StopDto, CreateStopDto, UpdateStopDto } from "../dto/stop.dto";
 import { SearchStopRequestDto } from "../dto/search-stop-request.dto";
 import { plainToInstance } from "class-transformer";
 import { Stoptime, StoptimeWithTripInfo } from "../../otp/types/otp-types";
-import { StopFeedbackDto, UpdateStopFeedbackDto } from "../dto/stop-feedback.dto";
-import { TripFeedbackDto, UpdateTripFeedbackDto } from "../dto/trip-feedback.dto";
+import { TripFeedbackDto } from "../dto/trip-feedback.dto";
 
 @Controller("pois/stop")
 export class StopController {
@@ -14,18 +13,6 @@ export class StopController {
         private stopService: StopService,
         private otpService: OtpService
     ) { }
-
-    @Post("/feedback")
-    async createFeedback(@Body() feedback: StopFeedbackDto): Promise<StopFeedbackDto> {
-        const createdFeedback = await this.stopService.createFeedback(feedback);
-        return plainToInstance(StopFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
-    }
-
-    @Put("/feedback")
-    async updateFeedback(@Body() feedback: UpdateStopFeedbackDto): Promise<StopFeedbackDto> {
-        const createdFeedback = await this.stopService.updateFeedback(feedback);
-        return plainToInstance(StopFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
-    }
 
     @Post("/trip/feedback")
     async createTripFeedback(@Body() feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
@@ -48,9 +35,9 @@ export class StopController {
         return plainToInstance(TripFeedbackDto, feedback, { excludeExtraneousValues: true });
     }
 
-    @Get("/trip/feedback/:tripId/")
-    async getAvgTripFeedback(@Param("tripId") tripId: string): Promise<number> {
-        const feedback = await this.stopService.getAvgTripFeedback(tripId);
+    @Get("/trip/feedback/:tripId/:day")
+    async getAvgTripFeedback(@Param("tripId") tripId: string, @Param("day") day: number): Promise<number> {
+        const feedback = await this.stopService.getAvgTripFeedback(tripId, day);
         return feedback;
     }
 

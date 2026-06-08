@@ -6,7 +6,7 @@ import { HydratedDocument } from "mongoose";
 export class ParkFeedback {
 
     @Prop({ required: true })
-    stopId: string;
+    parkId: string;
 
     @Prop({ required: true })
     userId: string;
@@ -27,4 +27,4 @@ export class ParkFeedback {
 export type ParkFeedbackDocument = HydratedDocument<ParkFeedback>;
 
 export const parkFeedbackSchema = SchemaFactory.createForClass(ParkFeedback);
-parkFeedbackSchema.index({ tripId: 1, userId: 1, day:1, hour:1 }, { unique: true });
+parkFeedbackSchema.index({ parkId: 1, userId: 1, day:1, hour:1 }, { unique: true });

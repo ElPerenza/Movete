@@ -10,6 +10,7 @@ import { UserService } from "../user/services/user.service";
 import { NoteService } from "../user/services/note.service";
 import { AlertService, Alert } from "../alert/services/alert.service";
 import { Park } from "../class/park";
+import { HourlyFeedback } from "../class/hourly-feedback";
 
 /**
  * Component for displaying transport timetables for a specific stop.
@@ -62,6 +63,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     public isFeedbackSectionOpen: boolean = false;
     public averageAffollamento: number = 0;
     public selectedTripArrivalDate: string | null = null;
+    public hourlyDistribution: HourlyFeedback[] = [];
 
     constructor(
         private http: HttpClient,
@@ -77,6 +79,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
             this.isLoggedIn = status;
             if (this.isLoggedIn && (this.stop || this.park)) {
                 this.loadUserDataForPoi();
+                this.loadParkFeedbackData();
             }
         });
     }
@@ -102,6 +105,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
 
             this.currentStopTimes = [];
             this.activeAlerts = [];
+            this.loadParkFeedbackData();
 
             if (this.isLoggedIn) {
                 this.loadUserDataForPoi();
@@ -127,7 +131,6 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         this.isLoadingNote = true;
 
         if (this.park) {
-            // Reset preventivo dello stato per evitare flash visivi errati
             this.isFavourite = false;
             this.noteContent = '';
             this.savedNoteId = undefined;
@@ -356,7 +359,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         this.averageAffollamento = 0;
         this.selectedTripArrivalDate = time.stoptime?.scheduledArrival || null;
         if (time.tripInfo?.id) {
-            this.userService.getAvgTripFeedback(time.tripInfo.id)
+            this.userService.getAvgTripFeedback(time.tripInfo.id, new Date().getDay() === 0 ? 7 : new Date().getDay())
                 .subscribe((avg: number) => {
                     this.averageAffollamento = avg || 0;
                     this.cdr.detectChanges();
@@ -433,6 +436,10 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         if (!this.isEditingFeedback && this.existingFeedbackScore !== null) return;
         if (this.isSubmittingFeedback || this.feedbackSuccess) return;
 
+        if (this.isEditingFeedback) {
+            this.feedbackSuccess = false; 
+        }
+
         this.selectedScore = score;
         this.cdr.detectChanges();
     }
@@ -440,6 +447,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     public enableEditing(event: Event): void {
         event.stopPropagation();
         this.isEditingFeedback = true;
+        this.feedbackSuccess = false;
         this.cdr.detectChanges();
     }
 
@@ -479,4 +487,97 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         });
     }
 
+    loadParkFeedbackData(): void {
+        if (!this.park) return;
+        const parkId = this.getPoiId();
+        
+        if (!parkId) return;
+
+        const now = new Date();
+        const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+        
+        let currentHour = now.getHours();
+        if (currentHour < 6) currentHour = 6;
+        if (currentHour > 23) currentHour = 23;
+
+        this.userService.getAvgParkFeedback(parkId, currentDay).subscribe({
+            next: (data: HourlyFeedback[]) => {
+                console.log('Dati ricevuti dal backend:', data);
+                this.hourlyDistribution = data;
+            },
+            error: (err) => {
+                console.error("Errore nel recupero della distribuzione oraria:", err);
+                this.hourlyDistribution = [];
+            }
+        });
+
+        if (this.isLoggedIn) {
+            this.userService.getParkFeedback(parkId, currentDay).subscribe({
+                next: (userFeedbacks: any[]) => {
+                    if (userFeedbacks && userFeedbacks.length > 0) {
+                        // Cerchiamo nell'array se l'utente ha votato SPECIFICATAMENTE per l'ora attuale
+                        const feedbackForCurrentHour = userFeedbacks.find(f => f.hour === currentHour);
+
+                        if (feedbackForCurrentHour) {
+                            // L'utente ha già votato in quest'ora
+                            this.existingFeedbackScore = feedbackForCurrentHour.feedback;
+                            this.selectedScore = feedbackForCurrentHour.feedback;
+                        } else {
+                            // Ha votato oggi, ma in altre ore. Per quest'ora il voto è pulito
+                            this.existingFeedbackScore = null;
+                            this.selectedScore = 0;
+                        }
+                    } else {
+                        // Nessun voto oggi
+                        this.existingFeedbackScore = null;
+                        this.selectedScore = 0;
+                    }
+                },
+                error: () => {
+                    this.existingFeedbackScore = null;
+                    this.selectedScore = 0;
+                }
+            });
+        }
+    }
+
+    public submitParkFeedback(): void {
+        const parkId = this.getPoiId();
+        if (!this.park || !parkId || this.selectedScore < 1 || this.selectedScore > 10) return;
+
+        this.isSubmittingFeedback = true;
+        this.cdr.detectChanges();
+
+
+        const request$ = this.existingFeedbackScore !== null
+            ? this.userService.updateParkFeedback(parkId, this.selectedScore)
+            : this.userService.sendParkFeedback(parkId, this.selectedScore);
+
+        request$.subscribe({
+            next: () => {
+                this.isSubmittingFeedback = false;
+                this.feedbackSuccess = true;
+                this.existingFeedbackScore = this.selectedScore;
+                this.isEditingFeedback = false;
+
+                this.loadParkFeedbackData();
+
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error("Errore durante l'invio del feedback del parcheggio", err);
+                this.isSubmittingFeedback = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    getCurrentHour(): number {
+        const hour = new Date().getHours();
+        
+        if (hour < 6) return 6;
+        if (hour > 23) return 23;
+        
+        return hour;
+    }
 }

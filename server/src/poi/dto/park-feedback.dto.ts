@@ -29,9 +29,6 @@ export class ParkFeedbackDto {
     @Min(6)
     @Max(23)
     hour: number;
-
-    
+ 
 }
-
-export class UpdateParkFeedbackDto extends PartialType(ParkFeedbackDto) {}
 

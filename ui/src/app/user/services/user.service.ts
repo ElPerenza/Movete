@@ -11,6 +11,7 @@ import { Park } from "../../class/park";
 export class UserService {
     private baseUrl = `${environment.apiUrl}users`
     private baseStopUrl = `${environment.apiUrl}pois/stop`
+    private baseParkUrl = `${environment.apiUrl}pois/park`
 
     constructor(private http: HttpClient, private authService: AuthService) { }
 
@@ -79,8 +80,51 @@ export class UserService {
         return this.http.get(`${this.baseStopUrl}/trip/feedback/${encodedTripId}/${encodedUserId}/${encodedDay}`);
     }
 
-    getAvgTripFeedback(tripId: string): Observable<number> {
+    getAvgTripFeedback(tripId: string, day: number): Observable<number> {
         const encodedTripId = encodeURIComponent(tripId);
-        return this.http.get<number>(`${this.baseStopUrl}/trip/feedback/${encodedTripId}/`);
+        return this.http.get<number>(`${this.baseStopUrl}/trip/feedback/${encodedTripId}/${day}`);
+    }
+
+    sendParkFeedback(parkId: string, score: number): Observable<any> {
+        const currentUserId = this.authService.getCurrentUser().userId;
+
+        const payload = {
+            parkId: parkId,
+            userId: currentUserId,
+            feedback: score,
+            feedbackDate: new Date(),
+            day: new Date().getDay() == 0 ? 7 : new Date().getDay(),
+            hour: new Date().getHours() < 6 ? 6 : new Date().getHours() > 23 ? 23 : new Date().getHours() 
+        };
+        console.log("Submitting park feedback with payload:", payload);
+        return this.http.post(`${this.baseParkUrl}/feedback`, payload);
+    }
+
+    updateParkFeedback(parkId: string, score: number): Observable<any> {
+        const currentUserId = this.authService.getCurrentUser().userId;
+
+        const payload = {
+            parkId: parkId,
+            userId: currentUserId,
+            feedback: score,
+            feedbackDate: new Date().toISOString(),
+            day: new Date().getDay() == 0 ? 7 : new Date().getDay(),
+            hour: new Date().getHours() < 6 ? 6 : new Date().getHours() > 23 ? 23 : new Date().getHours() 
+        };
+        console.log("Updating park feedback with payload:", payload);
+        return this.http.put(`${this.baseParkUrl}/feedback`, payload);
+    }
+
+    getParkFeedback(parkId: string, day: number): Observable<any> {
+        const currentUserId = this.authService.getCurrentUser().userId;
+        const encodedParkId = encodeURIComponent(parkId);
+        const encodedUserId = encodeURIComponent(currentUserId);
+        
+        return this.http.get(`${this.baseParkUrl}/feedback/${encodedParkId}/${encodedUserId}/${day}`);
+    }
+
+    getAvgParkFeedback(parkId: string, day: number): Observable<{ hour: number; avgFeedback: number }[]> {
+        const encodedParkId = encodeURIComponent(parkId);
+        return this.http.get<{ hour: number; avgFeedback: number }[]>(`${this.baseParkUrl}/feedback/${encodedParkId}/distribution/${day}`);
     }
 }

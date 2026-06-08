@@ -29,5 +29,3 @@ export class TripFeedbackDto {
     @Max(7)
     day: number;
 }
-
-export class UpdateTripFeedbackDto extends PartialType(TripFeedbackDto) {}
