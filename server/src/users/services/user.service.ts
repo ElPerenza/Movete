@@ -29,4 +29,26 @@ export class UsersService {
         ).exec();
     }
 
+    async getFavouriteParks(userId: string) {
+        const user = await this.userModel.findById(userId).populate("favouriteParks").exec();
+        if (!user) throw new NotFoundException("Utente non trovato");
+        return user.favouriteParks;
+    }
+
+    async addFavouritePark(userId: string, parkId: string) {
+        return this.userModel.findByIdAndUpdate(
+            userId,
+            { $addToSet: { favouriteParks: new Types.ObjectId(parkId) } },
+            { returnDocument: 'after' }
+        ).exec();
+    }
+
+    async removeFavouritePark(userId: string, parkId: string) {
+        return this.userModel.findByIdAndUpdate(
+            userId,
+            { $pull: { favouriteParks: new Types.ObjectId(parkId) } },
+            { returnDocument: 'after' }
+        ).exec();
+    }
+
 }

@@ -5,6 +5,7 @@ import { StopDto, CreateStopDto, UpdateStopDto } from "../dto/stop.dto";
 import { SearchStopRequestDto } from "../dto/search-stop-request.dto";
 import { plainToInstance } from "class-transformer";
 import { Stoptime, StoptimeWithTripInfo } from "../../otp/types/otp-types";
+import { TripFeedbackDto } from "../dto/trip-feedback.dto";
 
 @Controller("pois/stop")
 export class StopController {
@@ -12,6 +13,33 @@ export class StopController {
         private stopService: StopService,
         private otpService: OtpService
     ) { }
+
+    @Post("/trip/feedback")
+    async createTripFeedback(@Body() feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
+        const createdFeedback = await this.stopService.createTripFeedback(feedback);
+        return plainToInstance(TripFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Put("/trip/feedback")
+    async updateTripFeedback(@Body() feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
+        const createdFeedback = await this.stopService.updateTripFeedback(feedback);
+        return plainToInstance(TripFeedbackDto, createdFeedback, { excludeExtraneousValues: true });
+    }
+
+    @Get("/trip/feedback/:tripId/:userId/:day")
+    async getTripFeedback(@Param("tripId") tripId: string, @Param("userId") userId: string, @Param("day") day: number): Promise<TripFeedbackDto | null> {
+        const feedback = await this.stopService.getTripFeedback(tripId, userId, day);
+        if (feedback === null) {
+            return null;
+        }
+        return plainToInstance(TripFeedbackDto, feedback, { excludeExtraneousValues: true });
+    }
+
+    @Get("/trip/feedback/:tripId/:day")
+    async getAvgTripFeedback(@Param("tripId") tripId: string, @Param("day") day: number): Promise<number> {
+        const feedback = await this.stopService.getAvgTripFeedback(tripId, day);
+        return feedback;
+    }
 
     @Post("/")
     async create(@Body() stop: CreateStopDto): Promise<StopDto> {
@@ -76,4 +104,6 @@ export class StopController {
     async getTripDetails(@Param("tripId") tripId: string, @Param("serviceDate") serviceDate: number): Promise<Stoptime[]> {
         return this.otpService.getTripStoptimes(tripId, new Date(serviceDate));
     }
+
+    
 }

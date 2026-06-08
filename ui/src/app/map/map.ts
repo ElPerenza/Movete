@@ -15,6 +15,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { AuthService } from "../auth/services/auth.service";
 import { Subscription } from 'rxjs';
+import { NoteService } from "../user/services/note.service";
 
 @Component({
     selector: "app-map",
@@ -78,8 +79,16 @@ export class Map implements AfterViewInit, OnInit {
     public showUserMenu: boolean = false;
     private authSub!: Subscription;
 
+    public isFavourite: boolean = false;
+
+    public noteContent: string = "";
+    public savedNoteId: string | undefined = undefined;
+    public isLoadingNote: boolean = false;
+    public isNoteModalOpen: boolean = false;
+    public tempNoteContent: string = '';
+
     //TODO verify if cdr have some impact on performance but is the only thing that make the navbar working dynamically
-    constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private authService: AuthService, private route: ActivatedRoute) { }
+    constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private authService: AuthService, private route: ActivatedRoute, private noteService: NoteService) { }
 
     public toggleSidebar(): void {
         this.showSidebar = !this.showSidebar;
@@ -111,10 +120,14 @@ export class Map implements AfterViewInit, OnInit {
 
         this.route.queryParams.subscribe(params => {
             const preselectedStopId = params['stop'];
+            const preselectedParkId = params['park'];
 
             if (preselectedStopId) {
                 console.log("Devo auto-selezionare la fermata:", preselectedStopId);
                 this.handlePreselectedStop(preselectedStopId);
+            } else if (preselectedParkId) {
+                console.log("Devo auto-selezionare il parcheggio:", preselectedParkId);
+                this.handlePreselectedPark(preselectedParkId);
             }
         });
     }
@@ -347,6 +360,7 @@ export class Map implements AfterViewInit, OnInit {
                 this.selectStop(stop);
                 this.showSidebar = true;
 
+
                 const currentZoom = this.map.getZoom();
                 const targetZoom = currentZoom >= 17 ? currentZoom : 17;
                 this.map.flyTo([stop.location.coordinates[1], stop.location.coordinates[0]], targetZoom, { animate: true, duration: 1.5 });
@@ -355,6 +369,57 @@ export class Map implements AfterViewInit, OnInit {
             },
             error: (err) => {
                 console.error("Impossibile caricare la fermata preferita:", err);
+            }
+        });
+    }
+
+    private handlePreselectedPark(parkId: string) {
+        this.http.get<Park>(this.baseParkUrl + parkId).subscribe({
+            next: (park) => {
+                if (!park) return;
+
+                // Forza l'attivazione del filtro dei parcheggi nel caso fosse disattivato, 
+                // altrimenti non vedresti comparire il marker sulla mappa.
+                const filterType = park.parkType;
+                const filter = this.transportFilters.find(f => f.value === filterType);
+                if (filter && !filter.checked) {
+                    filter.checked = true;
+                }
+
+                // Verifica se il parcheggio è già presente nella lista dei visibili
+                const alreadyInList = this.currentParks.some(p => p.id === park.id || (p as any)._id === park.id);
+
+                if (!alreadyInList) {
+                    this.currentParks.unshift(park);
+
+                    const marker = L.marker(
+                        [park.location.coordinates[1], park.location.coordinates[0]],
+                        { icon: this.createParkIcon(false, park.parkType) }
+                    );
+                    
+                    marker.on('click', () => {
+                        this.selectPark(park);
+                        this.showSidebar = true;
+                        this.cdr.detectChanges();
+                    });
+                    
+                    this.parkMarkersMap[park.id] = marker;
+                    marker.addTo(this.parksLayerMarkerGroup);
+                }
+
+                // Seleziona il parcheggio (apre la sidebar e centra la mappa)
+                this.selectPark(park);
+                this.showSidebar = true;
+
+                
+                const currentZoom = this.map.getZoom();
+                const targetZoom = currentZoom >= 17 ? currentZoom : 17;
+                this.map.flyTo([park.location.coordinates[1], park.location.coordinates[0]], targetZoom, { animate: true, duration: 1.5 });
+
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error("Impossibile caricare il parcheggio preferito:", err);
             }
         });
     }
@@ -443,8 +508,8 @@ export class Map implements AfterViewInit, OnInit {
 
             if (targetElement) {
                 targetElement.scrollIntoView({
-                    behavior: 'instant', // Smooth slide animation
-                    block: 'start'    // Brings it into view minimalistically without jarring the whole page
+                    behavior: 'instant', 
+                    block: 'start' 
                 });
             }
         }
@@ -698,4 +763,5 @@ export class Map implements AfterViewInit, OnInit {
         const diffMs = endTime - startTime;
         return Math.round(diffMs / 1000 / 60);
     }
+
 }
