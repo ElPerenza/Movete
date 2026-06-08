@@ -4,6 +4,7 @@ import { Observable } from "rxjs";
 import { Stop } from "../../class/stop";
 import { environment } from "../../../environments/environment";
 import { AuthService } from "../../auth/services/auth.service";
+import { Park } from "../../class/park";
 
 
 @Injectable({ providedIn: "root" })
@@ -23,6 +24,18 @@ export class UserService {
 
     removeFavourite(stopId: string): Observable<any> {
         return this.http.delete(`${this.baseUrl}/favourites/${stopId}`);
+    }
+
+    getFavouriteParks(): Observable<Park[]> {
+        return this.http.get<Park[]>(`${this.baseUrl}/favourite-parks`);
+    }
+
+    addFavouritePark(parkId: string): Observable<any> {
+        return this.http.post(`${this.baseUrl}/favourite-parks/${parkId}`, {});
+    }
+
+    removeFavouritePark(parkId: string): Observable<any> {
+        return this.http.delete(`${this.baseUrl}/favourite-parks/${parkId}`);
     }
 
     sendTripFeedback(tripId: string, headsign: string, score: number, currentDay: number): Observable<any> {

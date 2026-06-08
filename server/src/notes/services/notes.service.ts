@@ -31,4 +31,26 @@ export class NotesService {
         if (!deletedNote) throw new NotFoundException('Nota non trovata o non autorizzato');
         return deletedNote;
     }
+
+    async getNoteForPark(userId: string, parkId: string) {
+        return this.noteModel.findOne({
+            userId: new Types.ObjectId(userId),
+            parkId: new Types.ObjectId(parkId)
+        }).exec();
+    }
+
+    async saveOrUpdateParkNote(userId: string, parkId: string, content: string) {
+        return this.noteModel.findOneAndUpdate(
+            { userId: new Types.ObjectId(userId), parkId: new Types.ObjectId(parkId) },
+            { content },
+            { returnDocument: 'after', upsert: true }
+        ).exec();
+    }
+
+    async deleteParkNote(noteId: string, userId: string) {
+        const deletedNote = await this.noteModel.findOneAndDelete({
+            _id: new Types.ObjectId(noteId),
+            userId: new Types.ObjectId(userId)
+        }).exec();
+    }
 } 

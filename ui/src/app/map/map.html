@@ -77,7 +77,7 @@
             <div class="px-6 pb-6 pt-1 md:pt-6 overflow-y-auto flex-1 w-full custom-scrollbar">
                 @if (!showPathForm) {
                     <div class="flex items-center justify-between border-b pb-4 mb-4 text-gray-800">
-                        <h2 class="text-xl font-bold">Fermate trovate</h2>
+                        <h2 class="text-xl font-bold">Elementi trovati</h2>
                         <button (click)="togglePathForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm">Cerca percorsi</button>
                     </div>
 
@@ -98,7 +98,8 @@
                         </div>
                     </div>
 
-                    <ul class="space-y-2">
+                    <div class="mb-2 text-xs font-bold uppercase tracking-wider text-gray-400">Fermate Transit</div>
+                    <ul class="space-y-2 mb-6">
                         @for (stop of currentStops; track stop.id) {
                             <li (click)="selectStop(stop)" [id]="'stop-card-' + stop.id" class="p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors">
                                 <div class="font-medium text-gray-800">{{ stop.name }}</div>
@@ -109,26 +110,31 @@
                                 }
                             </li>
                         } @empty {
-                            <li class="text-center text-gray-500 mt-10">Nessuna fermata trovata.</li>
+                            <li class="text-center text-gray-500 py-4 italic text-sm">Nessuna fermata nelle vicinanze.</li>
                         }
                     </ul>
 
+                    <div class="mb-2 text-xs font-bold uppercase tracking-wider text-gray-400">Parcheggi</div>
                     <ul class="space-y-2">
                         @for (park of currentParks; track park.id) {
                             <li (click)="selectPark(park)" [id]="'park-card-' + park.id"
                                 class="p-3 rounded-lg border cursor-pointer transition-colors"
-                                [class.border-blue-500]="selectedParkId === park.id"
-                                [class.bg-blue-50]="selectedParkId === park.id"
+                                [class.border-emerald-500]="selectedParkId === park.id"
+                                [class.bg-emerald-50]="selectedParkId === park.id"
                                 [class.border-gray-200]="selectedParkId !== park.id"
-                                [class.hover:border-blue-500]="selectedParkId !== park.id"
-                                [class.hover:bg-blue-50]="selectedParkId !== park.id">
+                                [class.hover:border-emerald-500]="selectedParkId !== park.id"
+                                [class.hover:bg-emerald-50]="selectedParkId !== park.id">
+                                
                                 <div class="font-medium text-gray-800">{{ park.name }}</div>
-                                <div class="font-medium text-gray-800">Tipologia: {{ park.parkType }}</div>
-                                <div class="font-medium text-gray-800">Capienza: {{ park.maxCapacity ? park.maxCapacity : 'dato non disponibile' }}</div>
-                                <div class="font-medium text-gray-800">Posti disponibili: {{ park.currentCapacity ? park.currentCapacity : 'dato non disponibile' }}</div>
+                                
+                                @if (selectedParkId === park.id) {
+                                    <div class="mt-2 text-sm text-gray-600 bg-white p-3 rounded border-l-4 border-emerald-500 shadow-sm" (click)="$event.stopPropagation()">
+                                        <app-timetable [park]="park"></app-timetable>
+                                    </div>
+                                }
                             </li>
                         } @empty {
-                            <li class="text-center text-gray-500 mt-10">Nessuna fermata trovata.</li>
+                            <li class="text-center text-gray-500 py-4 italic text-sm">Nessun parcheggio nelle vicinanze.</li>
                         }
                     </ul>
                 } @else {
@@ -152,10 +158,11 @@
                                     </div>
                                     <div class="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 mt-3">
                                         @for (leg of route.node.legs; track $index) {
-                                        <div class="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">@if (leg.mode === 'WALK') { 🚶‍♂️ } @else if (leg.mode === 'BUS') { 🚌 {{ leg.route?.shortName }} } @else if (leg.mode === 'RAIL') { 🚆 {{ leg.route?.shortName }} } @else { 🗺️ }</div>
-                                        @if (!$last) {
-                                        <span class="text-gray-300 font-bold text-sm">→</span>
-                                        } }
+                                            <div class="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">@if (leg.mode === 'WALK') { 🚶‍♂️ } @else if (leg.mode === 'BUS') { 🚌 {{ leg.route?.shortName }} } @else if (leg.mode === 'RAIL') { 🚆 {{ leg.route?.shortName }} } @else { 🗺️ }</div>
+                                            @if (!$last) {
+                                                <span class="text-gray-300 font-bold text-sm">→</span>
+                                            }
+                                        }
                                     </div>
                                 </div>
 
@@ -206,7 +213,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A2 2 0 013 15.487V6a2 2 0 011.106-1.789l5.447-2.724a2 2 0 011.894 0l5.447 2.724A2 2 0 0118 6v9.487a2 2 0 01-1.106 1.789L11.447 20a2 2 0 01-1.894 0z" />
                                 </svg>
                             </div>
-                            <p class="text-sm italic">Definisci i punti sulla mappa e clicca "Calcola" per visualizzare i risultati qui.</p>
+                            <p class="text-sm italic">Definisci i punti sulla mappa e clicca "Calcola" per visualizzare i risultati hier.</p>
                         </div>
                     }
                 }

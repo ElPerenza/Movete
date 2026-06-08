@@ -21,4 +21,16 @@ export class NoteService {
     deleteNote(noteId: string): Observable<any> {
         return this.http.delete(`${this.baseUrl}/${noteId}`);
     }
+
+    getNoteForPark(parkId: string): Observable<{ _id?: string, content: string }> {
+        return this.http.get<{ _id?: string, content: string }>(`${this.baseUrl}/poi/${parkId}`);
+    }
+
+    saveParkNote(parkId: string, content: string): Observable<any> {
+        return this.http.post(`${this.baseUrl}/poi/${parkId}`, { content });
+    }
+
+    deleteParkNote(noteId: string): Observable<any> {
+        return this.http.delete(`${this.baseUrl}/${noteId}`);
+    }
 }
