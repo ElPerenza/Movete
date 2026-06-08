@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StatisticsService } from './statistics.service';
@@ -22,25 +22,28 @@ export class StatisticsComponent implements OnInit {
     statsData: WeeklyOverview | null = null;
     isLoading: boolean = false;
 
-    constructor(private statsService: StatisticsService) {}
+    constructor(private statsService: StatisticsService, private cdr: ChangeDetectorRef) {}
 
     ngOnInit(): void {
         this.loadDropdownOptions();
     }
 
     loadDropdownOptions() {
-        this.statsService.getParkingOptions().subscribe(data => this.parkingOptions = data);
-        this.statsService.getTripOptions().subscribe(data => this.tripOptions = data);
+        this.statsService.getParkingOptions().subscribe(data => {this.parkingOptions = data; this.cdr.detectChanges();});
+        this.statsService.getTripOptions().subscribe(data => {this.tripOptions = data; this.cdr.detectChanges();});
+        this.cdr.detectChanges();
     }
 
     onSearchTypeChange() {
         this.selectedId = '';
         this.statsData = null;
+        this.cdr.detectChanges();
     }
 
     loadStatistics() {
         if (!this.selectedId) return;
 
+        this.cdr.detectChanges();
         this.isLoading = true;
         const request$ = this.searchType === 'parking' 
         ? this.statsService.getParkingWeeklyStats(this.selectedId)
@@ -50,10 +53,12 @@ export class StatisticsComponent implements OnInit {
         next: (data) => {
             this.statsData = data;
             this.isLoading = false;
+            this.cdr.detectChanges();
         },
         error: (err) => {
             console.error('Errore nel caricamento delle statistiche:', err);
             this.isLoading = false;
+            this.cdr.detectChanges();
         }
         });
     }

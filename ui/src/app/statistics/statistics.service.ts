@@ -16,7 +16,7 @@ export class StatisticsService {
     }
 
     getTripOptions(): Observable<TripSelectOption[]> {
-        return this.http.get<TripSelectOption[]>(`${this.baseUrl}/pois/stop/trips/list`);
+        return this.http.get<TripSelectOption[]>(`${this.baseUrl}/pois/stop/trip/statistic`);
     }
 
     getParkingWeeklyStats(parkId: string): Observable<WeeklyOverview> {
@@ -24,6 +24,6 @@ export class StatisticsService {
     }
 
     getTripWeeklyStats(tripId: string): Observable<WeeklyOverview> {
-        return this.http.get<WeeklyOverview>(`${this.baseUrl}/pois/stop/trips/feedback/${tripId}/weekly-overview`);
+        return this.http.get<WeeklyOverview>(`${this.baseUrl}/pois/stop/trip/feedback/${tripId}/weekly-overview`);
     }
 }

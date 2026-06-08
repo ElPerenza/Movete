@@ -15,6 +15,13 @@ export class StopController {
         private otpService: OtpService
     ) { }
 
+
+    @Get('/trip/feedback/:tripId/weekly-overview')
+    async getTripWeeklyStats(@Param('tripId') tripId: string): Promise<WeeklyOverview> {
+        const stats = await this.stopService.getTripWeeklyStats(tripId);
+        return stats;
+    }
+
     @Post("/trip/feedback")
     async createTripFeedback(@Body() feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
         const createdFeedback = await this.stopService.createTripFeedback(feedback);
@@ -48,11 +55,7 @@ export class StopController {
         return headsignAndId
     }
 
-    @Get(':tripId/weekly-overview')
-    async getTripWeeklyStats(@Param('tripId') tripId: string): Promise<WeeklyOverview> {
-        const stats = await this.stopService.getTripWeeklyStats(tripId);
-        return stats;
-    }
+
 
     @Post("/")
     async create(@Body() stop: CreateStopDto): Promise<StopDto> {

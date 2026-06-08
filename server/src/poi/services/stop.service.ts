@@ -199,31 +199,25 @@ export class StopService implements OnApplicationBootstrap {
     }
 
     async getTripWeeklyStats(tripId: string): Promise<WeeklyOverview> {
-        // 1. Array di supporto per mappare il numero del giorno (1-7) nel nome in italiano
-        const dayNames = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 
-        // 2. Pipeline di aggregazione su MongoDB
+        const dayNames = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+        this.logger.log(tripId);
+
         const aggregationResult = await this.TripFeedbackModel.aggregate([
             {
-                // Filtriamo subito i documenti per il tripId richiesto
                 $match: { tripId: tripId }
             },
             {
-                // Raggruppiamo i dati per il campo 'day' (1 = Lunedì, 7 = Domenica come da tuo DB)
                 $group: {
                     _id: '$day',
-                    averageFeedback: { $avg: '$feedback' }, // Calcola la media dei voti
-                    totalFeedbacks: { $sum: 1 }            // Conta quanti feedback ci sono in quel giorno
+                    averageFeedback: { $avg: '$feedback' },
+                    totalFeedbacks: { $sum: 1 }
                 }
             },
             {
-                // Ordiniamo i risultati dal lunedì alla domenica (da 1 a 7)
                 $sort: { _id: 1 }
             }
         ]).exec();
-
-        // 3. Inizializziamo la struttura vuota per tutti i 7 giorni della settimana
-        // Questo evita che il grafico si rompa se per alcuni giorni non ci sono ancora feedback nel DB
         const weeklyDataMap = new Map<number, WeeklyStopStatistic>();
         for (let i = 1; i <= 7; i++) {
             weeklyDataMap.set(i, {
@@ -239,7 +233,7 @@ export class StopService implements OnApplicationBootstrap {
         let daysWithFeedbackCount = 0;
 
         aggregationResult.forEach((row) => {
-            const dayNum = row._id; // Questo è il valore del gruppo '$day'
+            const dayNum = row._id;
             if (dayNum >= 1 && dayNum <= 7) {
                 const roundedAverage = Math.round(row.averageFeedback * 10) / 10; // Arrotonda a 1 cifra decimale
                 
