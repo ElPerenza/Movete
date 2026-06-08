@@ -12,7 +12,7 @@ export class StatisticsService {
     constructor(private http: HttpClient) {}
 
     getParkingOptions(): Observable<ParkingSelectOption[]> {
-        return this.http.get<ParkingSelectOption[]>(`${this.baseUrl}/pois/park/list`);
+        return this.http.get<ParkingSelectOption[]>(`${this.baseUrl}/pois/park`);
     }
 
     getTripOptions(): Observable<TripSelectOption[]> {
@@ -25,5 +25,9 @@ export class StatisticsService {
 
     getTripWeeklyStats(tripId: string): Observable<WeeklyOverview> {
         return this.http.get<WeeklyOverview>(`${this.baseUrl}/pois/stop/trip/feedback/${tripId}/weekly-overview`);
+    }
+
+    getTripDetails(tripId: string, serviceDate: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.baseUrl}/pois/stop/trip/${tripId}/${serviceDate}/details`);
     }
 }

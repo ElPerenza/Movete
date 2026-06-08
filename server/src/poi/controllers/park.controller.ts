@@ -5,6 +5,7 @@ import { UpdateParkDto, CreateParkDto, ParkDto } from "../dto/park.dto";
 import { SearchParkRequestDto } from "../dto/search-park-request.dto";
 import { plainToInstance } from "class-transformer";
 import { ParkFeedbackDto, } from "../dto/park-feedback.dto";
+import { WeeklyOverview } from "../../common/statistics";
 
 @Controller("pois/park")
 export class ParkController {
@@ -41,6 +42,18 @@ export class ParkController {
             throw new NotFoundException();
         }
         return plainToInstance(ParkFeedbackDto, feedback, { excludeExtraneousValues: true });
+    }
+
+    @Get("/feedback/:parkId/weekly-overview")
+    async getParkingWeeklyStats(@Param("parkId") parkId: string): Promise<WeeklyOverview> {
+        // Chiamata al servizio per recuperare l'aggregazione dei dati settimanali
+        const stats = await this.parkService.getParkingWeeklyStats(parkId);
+        
+        if (stats === null || stats === undefined) {
+            throw new NotFoundException(`Nessuna statistica trovata per il parcheggio con ID: ${parkId}`);
+        }
+        
+        return stats;
     }
 
     @Post("/")

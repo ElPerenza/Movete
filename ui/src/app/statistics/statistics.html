@@ -3,8 +3,9 @@
     <h2 class="text-2xl font-bold text-gray-800">Pannello Statistiche Settimanali</h2>
     <p class="text-sm text-gray-500">Analizza l'affollamento dei viaggi e l'occupazione dei parcheggi su base settimanale.</p>
     
-    <div class="mt-6 flex flex-col md:flex-row gap-4 items-end">
-      <div class="w-full md:w-1/4">
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+      
+      <div class="col-span-1 md:col-span-3">
         <label class="block text-xs font-bold text-gray-600 uppercase mb-2">Tipo di Analisi</label>
         <select [(ngModel)]="searchType" (change)="onSearchTypeChange()" 
                 class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500">
@@ -13,12 +14,12 @@
         </select>
       </div>
 
-      <div class="w-full md:w-2/4">
+      <div class="col-span-1" [ngClass]="searchType === 'trip' ? 'md:col-span-5' : 'md:col-span-9'">
         <label class="block text-xs font-bold text-gray-600 uppercase mb-2">
           {{ searchType === 'parking' ? 'Seleziona Parcheggio (Nome)' : 'Seleziona Corsa (Headsign)' }}
         </label>
         
-        <select [(ngModel)]="selectedId" (change)="loadStatistics()"
+        <select [(ngModel)]="selectedId" (change)="onMainSelectionChange()"
                 class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500">
           <option value="" disabled selected>-- Scegli un'opzione --</option>
           
@@ -27,12 +28,27 @@
               <option [value]="park.id">{{ park.name }}</option>
             }
           } @else {
-            @for (trip of tripOptions; track trip.id) {
-              <option [value]="trip.id">{{ trip.headsign }}</option>
+            @for (headsign of distinctHeadsigns; track headsign) {
+              <option [value]="headsign">{{ headsign }}</option>
             }
           }
         </select>
       </div>
+
+      @if (searchType === 'trip' && selectedId) {
+        <div class="col-span-1 md:col-span-4">
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-2">Orario di Partenza</label>
+          <select [(ngModel)]="selectedTripRealId" (change)="loadStatistics()" [disabled]="isLoadingTimes"
+                  class="w-full p-2.5 bg-white border border-blue-200 rounded-xl text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 shadow-sm disabled:opacity-50">
+            <option value="" disabled selected>
+              {{ isLoadingTimes ? 'Caricamento orari...' : '-- Scegli Orario --' }}
+            </option>
+            @for (option of tripTimeOptions; track option.id) {
+              <option [value]="option.id">Partenza ore {{ option.time }}</option>
+            }
+          </select>
+        </div>
+      }
     </div>
   </div>
 
@@ -44,8 +60,7 @@
   }
 
   @if (!isLoading && statsData) {
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
         <div>
           <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Feedback Totali Ricevuti</p>
@@ -68,35 +83,42 @@
     </div>
 
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-      <h3 class="text-lg font-bold text-gray-800 mb-6">Distribuzione Feedback Settimanale</h3>
+      <h3 class="text-lg font-bold text-gray-800 mb-6">
+        Distribuzione Feedback Settimanale 
+        <span class="text-sm font-normal text-gray-400">
+          {{ searchType === 'trip' ? '(Orario partenza delle ' + getSelectedTimeText() + ')' : '' }}
+        </span>
+      </h3>
       
-      <div class="flex h-80 items-end gap-3 md:gap-6 px-4 border-b border-gray-200 relative pb-2">
-        <div class="absolute left-0 top-0 bottom-2 flex flex-col justify-between text-xs text-gray-400 font-mono -ml-4">
+      <div class="flex h-80 items-end gap-3 md:gap-6 px-4 border-b border-gray-200 relative pb-8">
+        <div class="absolute left-0 top-0 bottom-8 flex flex-col justify-between text-xs text-gray-400 font-mono -ml-4">
           <span>10</span><span>7.5</span><span>5</span><span>2.5</span><span>0</span>
         </div>
 
         @for (day of statsData.weeklyData; track day.dayOfWeek) {
           <div class="flex-1 flex flex-col items-center h-full justify-end group relative">
             
-            <span class="absolute transition-all transform -translate-y-8 bg-gray-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadowopacity-100 group-hover:scale-110">
-              {{ day.totalFeedbacks }} fb
+            <span class="absolute transition-all transform -translate-y-12 bg-gray-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 group-hover:scale-110 z-10 whitespace-nowrap">
+              {{ day.totalFeedbacks }} feedback
             </span>
 
             <div [style.height]="getBarHeight(day.averageFeedback)"
-                 class="w-full bg-gradient-to-t from-blue-500 to-blue-600 rounded-t-md hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm relative flex items-start justify-center">
+                 class="w-full min-h-[4px] bg-gradient-to-t from-blue-500 to-blue-600 rounded-t-md hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm relative flex items-start justify-center">
               
-              <span class="text-white font-extrabold text-xs mt-1 drop-shadow-sm">
-                {{ day.averageFeedback > 0 ? (day.averageFeedback | number:'1.1-1') : '' }}
-              </span>
+              @if (day.averageFeedback > 0) {
+                <span class="text-white font-extrabold text-xs mt-1 drop-shadow-sm">
+                  {{ day.averageFeedback | number:'1.1-1' }}
+                </span>
+              }
             </div>
 
-            <span class="text-xs font-semibold text-gray-600 mt-3 absolute -bottom-6">
+            <span class="text-xs font-semibold text-gray-600 mt-2 absolute -bottom-1">
               {{ day.dayName | slice:0:3 }}.
             </span>
           </div>
         }
       </div>
-      <div class="h-6"></div>
+      <div class="h-2"></div>
     </div>
   }
 </div>

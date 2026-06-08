@@ -10,6 +10,7 @@ import { Point } from "../../common/point";
 import { throwError } from "rxjs";
 import { ParkFeedbackDto } from "../dto/park-feedback.dto";
 import { ParkFeedback, ParkFeedbackDocument } from "../models/parkFeedback.schema";
+import { WeeklyOverview } from "../../common/statistics";
 
 @Injectable()
 export class ParkingService implements OnApplicationBootstrap {
@@ -301,10 +302,86 @@ export class ParkingService implements OnApplicationBootstrap {
             const found = result.find(r => r.hour === h);
             hourlyData.push({
                 hour: h,
-                avgFeedback: found ? found.avgFeedback : 0 // 0 significa "nessun dato" o "vuoto"
+                avgFeedback: found ? found.avgFeedback : 0
             });
         }
 
         return hourlyData;
+    }
+
+    async getParkingWeeklyStats(parkId: string): Promise<WeeklyOverview> {
+        const dayNames = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
+
+        const stats = await this.ParkFeedbackModel.aggregate([
+            {
+                $match: {
+                    parkId: parkId 
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalFeedbacksAllTime: { $sum: 1 },
+                    overallAverage: { $avg: "$feedback" },
+                    allFeedbacks: {
+                        $push: {
+                            dayOfWeek: "$day", 
+                            rating: "$feedback" 
+                        }
+                    }
+                }
+            }
+        ]).exec();
+
+        if (!stats || stats.length === 0) {
+            return {
+                totalFeedbacksAllTime: 0,
+                overallAverage: 0,
+                weeklyData: dayNames.map((name, index) => ({
+                    dayOfWeek: index === 0 ? 7 : index,
+                    dayName: name,
+                    totalFeedbacks: 0,
+                    averageFeedback: 0
+                })).sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+            };
+        }
+
+        const globalStats = stats[0];
+
+        const weeklyDataMap = new Map<number, { total: number; sum: number }>();
+        for (let i = 1; i <= 7; i++) {
+            weeklyDataMap.set(i, { total: 0, sum: 0 });
+        }
+
+        globalStats.allFeedbacks.forEach((fb: { dayOfWeek: number; rating: number }) => {
+            const current = weeklyDataMap.get(fb.dayOfWeek);
+            if (current) {
+                current.total += 1;
+                current.sum += fb.rating;
+            }
+        });
+
+        const weeklyData = dayNames.map((name, index) => {
+            const databaseDayIndex = index + 1; 
+            const dayStats = weeklyDataMap.get(databaseDayIndex) || { total: 0, sum: 0 };
+
+            let frontendDayOfWeek = databaseDayIndex - 1; 
+            if (frontendDayOfWeek === 0) frontendDayOfWeek = 7; 
+
+            return {
+                dayOfWeek: frontendDayOfWeek,
+                dayName: name,
+                totalFeedbacks: dayStats.total,
+                averageFeedback: dayStats.total > 0 ? dayStats.sum / dayStats.total : 0
+            };
+        });
+
+        weeklyData.sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+
+        return {
+            totalFeedbacksAllTime: globalStats.totalFeedbacksAllTime,
+            overallAverage: globalStats.overallAverage || 0,
+            weeklyData: weeklyData
+        };
     }
 }
