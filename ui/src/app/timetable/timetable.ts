@@ -79,9 +79,9 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
             this.isLoggedIn = status;
             if (this.isLoggedIn && (this.stop || this.park)) {
                 this.loadUserDataForPoi();
-                this.loadParkFeedbackData();
             }
         });
+        this.loadParkFeedbackData();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
