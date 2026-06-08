@@ -282,11 +282,17 @@
                                     <div>
                                         @if (step.realtime) {
                                             @if (step.departureDelay === 0) {
-                                                <span class="font-bold text-green-500 text-sm">In orario</span>
+                                                <span class="font-bold text-green-500 text-sm">
+                                                    In orario
+                                                </span>
                                             } @else if (step.departureDelay < 0) {
-                                                <span class="font-bold text-purple-500 text-sm">{{ step.departureDelay / 60 }} min</span>
+                                                <span class="font-bold text-purple-500 text-sm">
+                                                    {{ step.departureDelay / 60 }} min
+                                                </span>
                                             } @else {
-                                                <span class="font-bold text-red-500 text-sm">+{{ step.departureDelay / 60 }} min</span>
+                                                <span class="font-bold text-red-500 text-sm">
+                                                    +{{ step.departureDelay / 60 }} min
+                                                </span>
                                             }
                                         }
                                         <span class="mr-2 text-sm font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded shrink-0">

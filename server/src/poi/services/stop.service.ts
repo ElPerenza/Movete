@@ -7,7 +7,6 @@ import { SearchStopRequestDto } from "../dto/search-stop-request.dto";
 import { ConfigService } from "@nestjs/config";
 import { OtpService } from "../../otp/services/otp.service";
 import { Point } from "../../common/point";
-import { StopFeedbackDto } from "../dto/stop-feedback.dto";
 import { TripFeedbackDto } from "../dto/trip-feedback.dto";
 import { TripFeedback, TripFeedbackDocument } from "../models/tripFeedback.shema";
 

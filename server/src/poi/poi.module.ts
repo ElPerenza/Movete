@@ -9,7 +9,6 @@ import { Park, ParkSchema } from "./models/park.schema";
 import { ParkController } from "./controllers/park.controller";
 import { ParkingService } from "./services/park.service";
 import { TripFeedback, tripFeedbackSchema } from "./models/tripFeedback.shema";
-import { StopFeedback, stopFeedbackSchema } from "./models/stopFeedback.schema";
 import { ParkFeedback, parkFeedbackSchema } from "./models/parkFeedback.schema";
 
 @Module({
@@ -19,7 +18,6 @@ import { ParkFeedback, parkFeedbackSchema } from "./models/parkFeedback.schema";
             { name: Stop.name, schema: StopSchema },
             { name: Park.name, schema: ParkSchema },
             { name: TripFeedback.name, schema: tripFeedbackSchema },
-            { name: StopFeedback.name, schema: stopFeedbackSchema },
             { name: ParkFeedback.name, schema: parkFeedbackSchema }
         ]),
         OtpModule
