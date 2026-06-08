@@ -6,6 +6,7 @@ import { SearchStopRequestDto } from "../dto/search-stop-request.dto";
 import { plainToInstance } from "class-transformer";
 import { Stoptime, StoptimeWithTripInfo } from "../../otp/types/otp-types";
 import { TripFeedbackDto } from "../dto/trip-feedback.dto";
+import { WeeklyOverview } from "../../common/statistics";
 
 @Controller("pois/stop")
 export class StopController {
@@ -39,6 +40,18 @@ export class StopController {
     async getAvgTripFeedback(@Param("tripId") tripId: string, @Param("day") day: number): Promise<number> {
         const feedback = await this.stopService.getAvgTripFeedback(tripId, day);
         return feedback;
+    }
+
+    @Get("/trip/statistic")
+    async getAllTripHeadsignAndTripId(): Promise<{id: string, headsign: string}[]>{
+        const headsignAndId = await this.stopService.getAllTripsHeadsignAndId();
+        return headsignAndId
+    }
+
+    @Get(':tripId/weekly-overview')
+    async getTripWeeklyStats(@Param('tripId') tripId: string): Promise<WeeklyOverview> {
+        const stats = await this.stopService.getTripWeeklyStats(tripId);
+        return stats;
     }
 
     @Post("/")

@@ -1,13 +1,32 @@
 <div class="min-h-screen bg-gray-50 p-6">
     <div class="max-w-7xl mx-auto">
         
-        <div class="flex items-center justify-between mb-8">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 pb-6 border-b border-gray-200 gap-4">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800">Portale Dipendenti</h1>
-                <p class="text-gray-500 mt-1">Gestione Avvisi Straordinari e (presto) Statistiche</p>
+                <p class="text-gray-500 mt-1">Gestione Avvisi Straordinari e Analisi Feedback</p>
             </div>
-            <a href="/" class="text-blue-600 hover:underline font-medium">Torna alla Mappa</a>
+
+            <div class="flex bg-gray-200/70 p-1 rounded-xl border border-gray-300/30">
+                <button (click)="switchTab('alerts')"
+                        [class.bg-white]="activeTab === 'alerts'"
+                        [class.shadow-sm]="activeTab === 'alerts'"
+                        [class.text-blue-600]="activeTab === 'alerts'"
+                        class="px-4 py-2 text-xs font-bold rounded-lg text-gray-600 hover:text-gray-900 transition-all flex items-center gap-2">
+                    Gestione Avvisi
+                </button>
+                <button (click)="switchTab('stats')"
+                        [class.bg-white]="activeTab === 'stats'"
+                        [class.shadow-sm]="activeTab === 'stats'"
+                        [class.text-blue-600]="activeTab === 'stats'"
+                        class="px-4 py-2 text-xs font-bold rounded-lg text-gray-600 hover:text-gray-900 transition-all flex items-center gap-2">
+                    Statistiche Generali
+                </button>
+            </div>
+
+            <a href="/" class="text-blue-600 hover:underline font-medium text-sm">Torna alla Mappa</a>
         </div>
+        @if (activeTab === 'alerts'){
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
@@ -104,5 +123,8 @@
                 }
             </div>
         </div>
+        }@else if (activeTab === 'stats') {
+            <app-statistics></app-statistics> 
+        }
     </div>
 </div>
