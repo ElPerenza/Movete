@@ -6,6 +6,7 @@ import { SearchStopRequestDto } from "../dto/search-stop-request.dto";
 import { plainToInstance } from "class-transformer";
 import { Stoptime, StoptimeWithTripInfo } from "../../otp/types/otp-types";
 import { TripFeedbackDto } from "../dto/trip-feedback.dto";
+import { WeeklyOverview } from "../../common/statistics";
 
 @Controller("pois/stop")
 export class StopController {
@@ -13,6 +14,13 @@ export class StopController {
         private stopService: StopService,
         private otpService: OtpService
     ) { }
+
+
+    @Get('/trip/feedback/:tripId/weekly-overview')
+    async getTripWeeklyStats(@Param('tripId') tripId: string): Promise<WeeklyOverview> {
+        const stats = await this.stopService.getTripWeeklyStats(tripId);
+        return stats;
+    }
 
     @Post("/trip/feedback")
     async createTripFeedback(@Body() feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
@@ -40,6 +48,14 @@ export class StopController {
         const feedback = await this.stopService.getAvgTripFeedback(tripId, day);
         return feedback;
     }
+
+    @Get("/trip/statistic")
+    async getAllTripHeadsignAndTripId(): Promise<{id: string, headsign: string}[]>{
+        const headsignAndId = await this.stopService.getAllTripsHeadsignAndId();
+        return headsignAndId
+    }
+
+
 
     @Post("/")
     async create(@Body() stop: CreateStopDto): Promise<StopDto> {
@@ -100,10 +116,15 @@ export class StopController {
         return allStoptimes.flat().sort((st1, st2) => st1.stoptime.scheduledDeparture.getTime() - st2.stoptime.scheduledDeparture.getTime());
     }
 
+    @Get("/trip/:tripId/details")
+    async getTripRouteShortName(@Param("tripId") tripId: string): Promise<string> {
+        return this.otpService.getRouteShortNameByTripId(tripId);
+    }
+
     @Get("/trip/:tripId/:serviceDate/details")
     async getTripDetails(@Param("tripId") tripId: string, @Param("serviceDate") serviceDate: number): Promise<Stoptime[]> {
         return this.otpService.getTripStoptimes(tripId, new Date(serviceDate));
-    }
+    }  
 
     
 }

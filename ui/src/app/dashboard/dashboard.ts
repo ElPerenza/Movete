@@ -3,13 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertService, Alert } from '../alert/services/alert.service';
 import { AuthService } from '../auth/services/auth.service';
+import { StatisticsComponent } from '../statistics/statistics';
+import { StatisticsService } from '../statistics/statistics.service';
 
 @Component({
     selector: 'app-dashboard',
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, StatisticsComponent],
     templateUrl: './dashboard.html'
 })
 export class Dashboard implements OnInit {
+    public activeTab: 'alerts' | 'stats' = 'alerts';
     public alerts: Alert[] = [];
     public isLoading = false;
 
@@ -30,11 +33,17 @@ export class Dashboard implements OnInit {
     constructor(
         private alertService: AlertService,
         private authService: AuthService,
+        private statisticService: StatisticsService,
         private cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit() {
         this.loadAlerts();
+    }
+
+    public switchTab(tab: 'alerts' | 'stats'): void {
+        this.activeTab = tab;
+        this.cdr.detectChanges();
     }
 
     searchAlertsForStop() {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GraphQLClientService } from '../../graphql-client/services/graphql-client.service'
 import { Stop, Stoptime, StoptimeType, StoptimeWithTripInfo, TripPathInformation } from '../types/otp-types';
@@ -426,5 +426,22 @@ export class OtpService {
             console.error(`Failed to fetch car parkings: ${error}`);
             return [];
         }
+    }
+
+    private readonly logger = new Logger(OtpService.name, { timestamp: true })
+
+    async getRouteShortNameByTripId(tripId: string): Promise<string>{
+        const query = `
+            query GetTripDetails($tripId: String!) {
+                trip(id: $tripId) {
+                    route {
+                    shortName
+                    }
+                }
+            }
+        `
+
+        const result: {trip: {route: {shortName: string}}} = await this.graphQlClient.makeQuery<{trip: {route: {shortName: string}}}>(this.OTP_GRAPHQL_URL, query, { tripId: tripId });
+        return result.trip.route.shortName;
     }
 }

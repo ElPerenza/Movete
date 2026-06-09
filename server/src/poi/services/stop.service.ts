@@ -9,6 +9,7 @@ import { OtpService } from "../../otp/services/otp.service";
 import { Point } from "../../common/point";
 import { TripFeedbackDto } from "../dto/trip-feedback.dto";
 import { TripFeedback, TripFeedbackDocument } from "../models/tripFeedback.shema";
+import { WeeklyOverview, WeeklyStopStatistic } from "../../common/statistics";
 
 @Injectable()
 export class StopService implements OnApplicationBootstrap {
@@ -153,7 +154,7 @@ export class StopService implements OnApplicationBootstrap {
     
     async updateTripFeedback(feedback: TripFeedbackDto): Promise<TripFeedbackDocument | null> {
         const updatedDocument = await this.TripFeedbackModel.findOneAndUpdate(
-            { tripId: feedback.tripId, userId: feedback.userId },
+            { tripId: feedback.tripId, userId: feedback.userId, day: feedback.day },
             { $set: feedback },
             { new: true, runValidators: true } // 'new: true' returns the modified document instead of the old one
         ).exec();
@@ -179,4 +180,85 @@ export class StopService implements OnApplicationBootstrap {
         ]).exec();
         return result.length > 0 ? result[0].avgFeedback : 0;
     }
+
+    async getAllTripsHeadsignAndId(): Promise<{ id: string, headsign: string}[]> {
+        const result = await this.TripFeedbackModel.find().exec();
+        const trips: { id: string, headsign: string }[] = [];
+        if (result && result.length > 0) {
+            result.forEach(element => {
+                const tripId = element.tripId;
+                const headsign = element.headsign;
+
+                trips.push({
+                    id: tripId,
+                    headsign: headsign
+                })
+            });
+        }
+        return trips;
+    }
+
+    async getTripWeeklyStats(tripId: string): Promise<WeeklyOverview> {
+
+        const dayNames = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+        this.logger.log(tripId);
+
+        const aggregationResult = await this.TripFeedbackModel.aggregate([
+            {
+                $match: { tripId: tripId }
+            },
+            {
+                $group: {
+                    _id: '$day',
+                    averageFeedback: { $avg: '$feedback' },
+                    totalFeedbacks: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]).exec();
+        const weeklyDataMap = new Map<number, WeeklyStopStatistic>();
+        for (let i = 1; i <= 7; i++) {
+            weeklyDataMap.set(i, {
+                dayOfWeek: i,
+                dayName: dayNames[i - 1],
+                averageFeedback: 0,
+                totalFeedbacks: 0
+            });
+        }
+
+        let grandTotalFeedbacks = 0;
+        let sumOfAverages = 0;
+        let daysWithFeedbackCount = 0;
+
+        aggregationResult.forEach((row) => {
+            const dayNum = row._id;
+            if (dayNum >= 1 && dayNum <= 7) {
+                const roundedAverage = Math.round(row.averageFeedback * 10) / 10; // Arrotonda a 1 cifra decimale
+                
+                weeklyDataMap.set(dayNum, {
+                    dayOfWeek: dayNum,
+                    dayName: dayNames[dayNum - 1],
+                    averageFeedback: roundedAverage,
+                    totalFeedbacks: row.totalFeedbacks
+                });
+
+                grandTotalFeedbacks += row.totalFeedbacks;
+                sumOfAverages += row.averageFeedback;
+                daysWithFeedbackCount++;
+            }
+        });
+
+        const overallAverage = daysWithFeedbackCount > 0 
+            ? Math.round((sumOfAverages / daysWithFeedbackCount) * 10) / 10 
+            : 0;
+
+        return {
+            weeklyData: Array.from(weeklyDataMap.values()),
+            totalFeedbacksAllTime: grandTotalFeedbacks,
+            overallAverage: overallAverage
+        };
+    }
+
 }
