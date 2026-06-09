@@ -27,7 +27,11 @@ export class StatisticsService {
         return this.http.get<WeeklyOverview>(`${this.baseUrl}/pois/stop/trip/feedback/${tripId}/weekly-overview`);
     }
 
-    getTripDetails(tripId: string, serviceDate: number): Observable<any[]> {
+    getTripDetails(tripId: string): Observable<string> {
+        return this.http.get(`${this.baseUrl}/pois/stop/trip/${tripId}/details`, { responseType: 'text' });
+    }
+
+    getTripDetailsWithTime(tripId: string, serviceDate: number): Observable<any[]> {
         return this.http.get<any[]>(`${this.baseUrl}/pois/stop/trip/${tripId}/${serviceDate}/details`);
     }
 }

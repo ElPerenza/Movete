@@ -6,6 +6,7 @@ export interface ParkingSelectOption {
 export interface TripSelectOption {
   id: string;
   headsign: string;
+  routeShortName?: string;
 }
 
 // Per i dati del grafico settimanale

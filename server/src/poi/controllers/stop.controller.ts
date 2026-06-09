@@ -116,10 +116,15 @@ export class StopController {
         return allStoptimes.flat().sort((st1, st2) => st1.stoptime.scheduledDeparture.getTime() - st2.stoptime.scheduledDeparture.getTime());
     }
 
+    @Get("/trip/:tripId/details")
+    async getTripRouteShortName(@Param("tripId") tripId: string): Promise<string> {
+        return this.otpService.getRouteShortNameByTripId(tripId);
+    }
+
     @Get("/trip/:tripId/:serviceDate/details")
     async getTripDetails(@Param("tripId") tripId: string, @Param("serviceDate") serviceDate: number): Promise<Stoptime[]> {
         return this.otpService.getTripStoptimes(tripId, new Date(serviceDate));
-    }
+    }  
 
     
 }

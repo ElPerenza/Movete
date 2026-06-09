@@ -16,7 +16,7 @@
 
       <div class="col-span-1" [ngClass]="searchType === 'trip' ? 'md:col-span-5' : 'md:col-span-9'">
         <label class="block text-xs font-bold text-gray-600 uppercase mb-2">
-          {{ searchType === 'parking' ? 'Seleziona Parcheggio (Nome)' : 'Seleziona Corsa (Headsign)' }}
+          {{ searchType === 'parking' ? 'Seleziona Parcheggio (Nome)' : 'Seleziona Corsa (Linea/Treno e Destinazione)' }}
         </label>
         
         <select [(ngModel)]="selectedId" (change)="onMainSelectionChange()"
@@ -28,8 +28,11 @@
               <option [value]="park.id">{{ park.name }}</option>
             }
           } @else {
-            @for (headsign of distinctHeadsigns; track headsign) {
-              <option [value]="headsign">{{ headsign }}</option>
+            @for (trip of distinctHeadsigns; track trip.headsign) {
+              <option [value]="trip.headsign">
+                {{ trip.id.startsWith('Trenitalia:') ? 'Treno' : 'Linea' }} 
+                {{ trip.routeShortName ? trip.routeShortName : '' }}: {{ trip.headsign }}
+              </option>
             }
           }
         </select>

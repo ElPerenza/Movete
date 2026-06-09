@@ -3,12 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StatisticsService } from './statistics.service';
 import { ParkingSelectOption, TripSelectOption, WeeklyOverview } from '../class/statistic';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, forkJoin, of } from 'rxjs';
 
 interface SortedTripOption {
   id: string; 
   time: string; 
+}
+
+interface EnhancedTripOption extends TripSelectOption {
+  routeShortName?: string;
+  extractedTime?: string;
 }
 
 @Component({
@@ -24,8 +28,8 @@ export class StatisticsComponent implements OnInit {
     selectedTripRealId: string = ''; 
 
     parkingOptions: ParkingSelectOption[] = [];
-    rawTripOptions: TripSelectOption[] = []; 
-    distinctHeadsigns: string[] = [];         
+    tripOptions: EnhancedTripOption[] = []; 
+    distinctHeadsigns: EnhancedTripOption[] = [];   
     tripTimeOptions: SortedTripOption[] = [];
 
     statsData: WeeklyOverview | null = null;
@@ -44,12 +48,62 @@ export class StatisticsComponent implements OnInit {
             this.cdr.detectChanges();
         });
         
-        this.statsService.getTripOptions().subscribe(data => {
-            this.rawTripOptions = data;
-            const headsignsSet = new Set(data.map(t => t.headsign).filter(Boolean));
-            this.distinctHeadsigns = Array.from(headsignsSet).sort();
-            this.cdr.detectChanges();
+        this.statsService.getTripOptions().subscribe(trips => {
+            if (!trips || trips.length === 0) return;
+
+            this.tripOptions = trips.map(trip => {
+                return { ...trip, routeShortName: ''};
+            });
+
+            this.updateDistinctHeadsigns();
+
+            this.tripOptions.forEach((trip, index) => {
+                this.statsService.getTripDetails(trip.id).subscribe({
+                    next: (res) => {
+                        const serverShortName = res ? res.trim() : '';
+
+                        if (trip.id.startsWith('Trenitalia:')) {
+                            const parts = trip.id.split('-');
+                            const trainNumber = parts.length >= 3 ? parts[parts.length - 3].trim() : '';
+                            
+                            this.tripOptions[index].routeShortName = serverShortName 
+                                ? `${serverShortName} ${trainNumber}`.trim() 
+                                : trainNumber;
+                        } else {
+                            this.tripOptions[index].routeShortName = serverShortName;
+                        }
+                        
+                        this.updateDistinctHeadsigns();
+                    },
+                    error: () => {
+
+                        this.tripOptions[index].routeShortName = '';
+                        
+                        this.updateDistinctHeadsigns();
+                    }
+                });
+            });
         });
+    }
+
+    updateDistinctHeadsigns() {
+        const seen = new Set<string>();
+        const tempDistinct: EnhancedTripOption[] = [];
+
+        this.tripOptions.forEach(trip => {
+            if (!seen.has(trip.headsign)) {
+                seen.add(trip.headsign);
+                tempDistinct.push({ ...trip });
+            } else {
+                const existing = tempDistinct.find(t => t.headsign === trip.headsign);
+                if (existing && !existing.routeShortName && trip.routeShortName) {
+                    existing.routeShortName = trip.routeShortName;
+                }
+            }
+        });
+
+        this.distinctHeadsigns = [...tempDistinct];
+        this.cdr.detectChanges();
     }
 
     onSearchTypeChange() {
@@ -70,16 +124,17 @@ export class StatisticsComponent implements OnInit {
         if (this.searchType === 'parking') {
             this.loadStatistics();
         } else {
-
             this.loadDepartureTimesForHeadsign(this.selectedId);
         }
     }
 
     loadDepartureTimesForHeadsign(headsign: string) {
         this.isLoadingTimes = true;
-        this.cdr.detectChanges();
+        
+        const matchingTrips = this.tripOptions.filter(t => t.headsign === headsign);
 
-        const matchingTrips = this.rawTripOptions.filter(t => t.headsign === headsign);
+        const tempOptions: SortedTripOption[] = [];
+        const seenTimes = new Set<string>();
         const todayTimestamp = new Date().setHours(0, 0, 0, 0);
 
         if (matchingTrips.length === 0) {
@@ -89,7 +144,7 @@ export class StatisticsComponent implements OnInit {
         }
 
         const requests = matchingTrips.map(trip => 
-            this.statsService.getTripDetails(trip.id, todayTimestamp).pipe(
+            this.statsService.getTripDetailsWithTime(trip.id, todayTimestamp).pipe(
                 catchError(err => {
                     console.error(`Errore caricamento dettagli per trip ${trip.id}:`, err);
                     return of(null);
@@ -99,8 +154,6 @@ export class StatisticsComponent implements OnInit {
 
         forkJoin(requests).subscribe({
             next: (responses) => {
-                const tempOptions: SortedTripOption[] = [];
-
                 responses.forEach((stopTimes, index) => {
                     const originalTripId = matchingTrips[index].id;
                     
@@ -113,10 +166,14 @@ export class StatisticsComponent implements OnInit {
                             const firstDeparture = new Date(departureDates[0]);
                             const formattedTime = firstDeparture.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
                             
-                            tempOptions.push({
-                                id: originalTripId,
-                                time: formattedTime
-                            });
+                            // Controlla se l'orario è già stato inserito per evitare duplicati
+                            if (!seenTimes.has(formattedTime)) {
+                                seenTimes.add(formattedTime);
+                                tempOptions.push({
+                                    id: originalTripId,
+                                    time: formattedTime
+                                });
+                            }
                         }
                     }
                 });
