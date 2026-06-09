@@ -294,9 +294,6 @@ export class ParkingService implements OnApplicationBootstrap {
             }
         ]).exec();
 
-        this.logger.log("result: " + result);
-        this.logger.log("day: " + day);
-        this.logger.log("parkId: " + parkId);
         const hourlyData = [];
         for (let h = 6; h <= 23; h++) {
             const found = result.find(r => r.hour === h);

@@ -154,7 +154,7 @@ export class StopService implements OnApplicationBootstrap {
     
     async updateTripFeedback(feedback: TripFeedbackDto): Promise<TripFeedbackDocument | null> {
         const updatedDocument = await this.TripFeedbackModel.findOneAndUpdate(
-            { tripId: feedback.tripId, userId: feedback.userId },
+            { tripId: feedback.tripId, userId: feedback.userId, day: feedback.day },
             { $set: feedback },
             { new: true, runValidators: true } // 'new: true' returns the modified document instead of the old one
         ).exec();
