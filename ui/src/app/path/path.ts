@@ -21,8 +21,7 @@ export class Path implements OnInit{
     isTripDropdownOpen = false;
 
     locationOptions = [
-        { id: 'walk', name: 'walk' },
-        { id: 'car', name: 'car' }
+        { id: 'walk', name: 'walk' }
     ];
 
     // Mock data for the Trip checkboxes
