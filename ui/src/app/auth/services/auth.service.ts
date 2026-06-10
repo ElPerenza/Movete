@@ -4,6 +4,12 @@ import { BehaviorSubject, Observable, tap, catchError, of } from "rxjs";
 import { LoginRequest } from "../models/login-request";
 import { environment } from "../../../environments/environment";
 
+export interface User {
+    loggedIn: boolean
+    userId: number
+    role: "user" | "employee" | "admin"
+}
+
 @Injectable({
     providedIn: "root"
 })
@@ -14,7 +20,11 @@ export class AuthService {
 
     public isLoggedIn$ = this.loggedIn.asObservable();
 
-    private currentUser: any = null;
+    private currentUser: User | null = null;
+
+    get loggedInUser() {
+        return this.currentUser;
+    }
 
     constructor(private http: HttpClient) {
         this.checkInitialSession().subscribe();
