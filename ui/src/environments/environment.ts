@@ -1,3 +1,3 @@
 export const environment = {
-    apiUrl: ""
+    apiUrl: "https://movete.onrender.com/v1/"
 };

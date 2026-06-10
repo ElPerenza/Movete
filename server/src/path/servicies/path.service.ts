@@ -17,7 +17,7 @@ export class PathService {
      * @param request The parameter of the path the user want to create
      * @returns A JSON that contain a list of possible path
      */
-    async findPathGtfs(request: PathRequestDto): Promise<string> {
+    async findPathGtfs(request: PathRequestDto): Promise<any> {
         const query = `
             query planConnection(
                 $origin: PlanLabeledLocationInput!
@@ -92,7 +92,7 @@ export class PathService {
         this.logger.log(JSON.stringify(this.requestToVariables(request)));
         const { data, errors } = await response.json();
         this.logger.log(JSON.stringify(errors));
-        return JSON.stringify(data);
+        return data;
     }
 
     /**

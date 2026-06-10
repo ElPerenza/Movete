@@ -9,6 +9,7 @@ import { AuthService } from "../auth/services/auth.service";
 import { UserService } from "../user/services/user.service";
 import { NoteService } from "../user/services/note.service";
 import { AlertService, Alert } from "../alert/services/alert.service";
+import { environment } from "../../environments/environment";
 import { Park } from "../class/park";
 import { HourlyFeedback } from "../class/hourly-feedback";
 
@@ -52,7 +53,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     public isAlertsPanelOpen: boolean = false;
 
     //Endipoint backend
-    private baseUrl: string = "http://localhost:3000/pois/stop/";
+    private baseUrl: string = new URL("pois/stop/", environment.apiUrl).href;
 
     public selectedScore: number = 0;
     public isSubmittingFeedback: boolean = false;

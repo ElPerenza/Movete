@@ -21,6 +21,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
 
     // TODO: A lot of shared state between methods in this class. It works and isn't terribly complex, but I'd like a cleaner way of doing things in the future
     private runningToday?: TripPathInformation[];
+    private collectingTripInfo = false;
     private readonly trackedTrips: Set<string> = new Set();
     private feed?: Uint8Array;
 
@@ -40,6 +41,7 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
             try {
                 this.runningToday = await this.getTripsRunningToday();
             } catch(err) {
+                this.runningToday = undefined; // set to undefined so that next feed update can try fetching since this failed
                 this.logger.error(err);
             }
         });
@@ -84,7 +86,16 @@ export class TrentinoTrasportiGtfsRealtimeProvider implements GtfsRealtimeProvid
         const start = Date.now();
 
         if(!this.runningToday) {
-            this.runningToday = await this.getTripsRunningToday();
+            // avoid restarting retrieval of trips running today if it's already ongoing (to prevent overloading resources)
+            if(this.collectingTripInfo) {
+                return;
+            }
+            try {
+                this.collectingTripInfo = true;
+                this.runningToday = await this.getTripsRunningToday();
+            } finally {
+                this.collectingTripInfo = false;
+            }
         }
 
         const now = Math.floor(Date.now() / 1000);

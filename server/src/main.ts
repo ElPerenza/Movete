@@ -1,4 +1,4 @@
-import { ValidationPipe, ConsoleLogger } from "@nestjs/common";
+import { ValidationPipe, ConsoleLogger, VersioningType } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import session from "express-session";
@@ -7,8 +7,12 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
         logger: new ConsoleLogger({
             json: process.env["JSON_LOGS"] === "true",
-            logLevels: ['log']
+            logLevels: [process.env["LOG_LEVEL"] === "debug" ? "debug" : "log"]
         }),
+    });
+    app.enableVersioning({
+        type: VersioningType.URI,
+        defaultVersion: "1"
     });
     app.useGlobalPipes(
         new ValidationPipe({
@@ -17,7 +21,7 @@ async function bootstrap() {
         })
     );
     app.enableCors({
-        origin: 'http://localhost:4200',
+        origin: process.env["CLIENT_URL"] ?? "http://localhost:4200",
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
     });

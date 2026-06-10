@@ -7,7 +7,7 @@ export class PathController {
     constructor(private pathService: PathService) {}
 
     @Post("/")
-    async createPath(@Body() request: PathRequestDto): Promise<string> {
+    async createPath(@Body() request: PathRequestDto): Promise<any> {
         const path = await this.pathService.findPathGtfs(request);
         return path;
     }

@@ -13,7 +13,7 @@ import { Timetable } from "../timetable/timetable";
 import { environment } from "../../environments/environment";
 import { ActivatedRoute } from '@angular/router';
 
-import { AuthService } from "../auth/services/auth.service";
+import { AuthService, User } from "../auth/services/auth.service";
 import { Subscription } from 'rxjs';
 import { NoteService } from "../user/services/note.service";
 
@@ -75,6 +75,7 @@ export class Map implements AfterViewInit, OnInit {
     ];
     public useBbox: boolean = true;
     public isLoggedIn: boolean = false;
+    public currentUser: User | null = null;
 
     public showUserMenu: boolean = false;
     private authSub!: Subscription;
@@ -135,6 +136,7 @@ export class Map implements AfterViewInit, OnInit {
     ngOnInit() {
         this.authSub = this.authService.isLoggedIn$.subscribe((status: boolean) => {
             this.isLoggedIn = status;
+            this.currentUser = this.authService.loggedInUser;
             this.cdr.detectChanges();
         });
 
