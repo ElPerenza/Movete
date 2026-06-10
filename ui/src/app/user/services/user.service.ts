@@ -41,7 +41,7 @@ export class UserService {
 
     sendTripFeedback(tripId: string, headsign: string, score: number, currentDay: number): Observable<any> {
 
-        const currentUserId = this.authService.getCurrentUser().userId;
+        const currentUserId = this.authService.getCurrentUser()!.userId;
 
 
         const payload = {
@@ -57,7 +57,7 @@ export class UserService {
     }
 
     updateTripFeedback(tripId: string, headsign: string, score: number, currentDay: number): Observable<any> {
-        const currentUserId = this.authService.getCurrentUser().userId;
+        const currentUserId = this.authService.getCurrentUser()!.userId;
         
 
         const payload = {
@@ -73,7 +73,7 @@ export class UserService {
     }
 
     getTripFeedback(tripId: string, day: number): Observable<any> {
-        const currentUserId = this.authService.getCurrentUser().userId;
+        const currentUserId = this.authService.getCurrentUser()!.userId;
         const encodedTripId = encodeURIComponent(tripId);
         const encodedUserId = encodeURIComponent(currentUserId);
         const encodedDay = encodeURIComponent(day.toString());
@@ -86,7 +86,7 @@ export class UserService {
     }
 
     sendParkFeedback(parkId: string, score: number): Observable<any> {
-        const currentUserId = this.authService.getCurrentUser().userId;
+        const currentUserId = this.authService.getCurrentUser()!.userId;
 
         const payload = {
             parkId: parkId,
@@ -101,7 +101,7 @@ export class UserService {
     }
 
     updateParkFeedback(parkId: string, score: number): Observable<any> {
-        const currentUserId = this.authService.getCurrentUser().userId;
+        const currentUserId = this.authService.getCurrentUser()!.userId;
 
         const payload = {
             parkId: parkId,
@@ -116,7 +116,7 @@ export class UserService {
     }
 
     getParkFeedback(parkId: string, day: number): Observable<any> {
-        const currentUserId = this.authService.getCurrentUser().userId;
+        const currentUserId = this.authService.getCurrentUser()!.userId;
         const encodedParkId = encodeURIComponent(parkId);
         const encodedUserId = encodeURIComponent(currentUserId);
         
