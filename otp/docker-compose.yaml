@@ -1,0 +1,6 @@
+services:
+  osmium-converter:
+    build: 
+      dockerfile: ./osmium.Dockerfile
+    volumes:
+      - ./data/:/data

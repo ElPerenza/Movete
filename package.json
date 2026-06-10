@@ -5,7 +5,8 @@
   "description": "",
   "workspaces": [
     "server",
-    "ui"
+    "ui",
+    "otp"
   ],
   "repository": {
     "type": "git",

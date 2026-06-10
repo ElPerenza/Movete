@@ -1,0 +1,25 @@
+{
+  "name": "movete-otp",
+  "version": "0.0.1",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "ts-node": "ts-node",
+    "prepare-data": "ts-node ./prepare-transit-data.ts && ts-node ./prepare-parking-data.ts && docker compose up --build"
+  },
+  "engines": {
+    "node": ">=24.0.0 <25.0.0"
+  },
+  "type": "module",
+  "dependencies": {
+    "@turf/turf": "^7.3.5",
+    "proj4": "^2.20.8",
+    "ts-node": "^10.9.2",
+    "unzipper": "^0.12.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.1",
+    "@types/unzipper": "^0.10.11",
+    "typescript": "^5.7.3"
+  }
+}
