@@ -433,8 +433,6 @@ export class OtpService {
         }
     }
 
-    private readonly logger = new Logger(OtpService.name, { timestamp: true })
-
     async getRouteShortNameByTripId(tripId: string): Promise<string>{
         const query = `
             query GetTripDetails($tripId: String!) {
