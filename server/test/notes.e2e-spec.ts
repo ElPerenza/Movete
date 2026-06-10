@@ -1,9 +1,9 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { NotesController } from "./notes.controller";
-import { NotesService } from "../services/notes.service";
+import { NotesController } from "../src/notes/controllers/notes.controller";
+import { NotesService } from "../src/notes/services/notes.service";
 import { UnauthorizedException } from "@nestjs/common";
 
-describe("NotesController", () => {
+describe("NotesController E2E", () => {
     let controller: NotesController;
 
     const mockNotesService = {
@@ -19,10 +19,6 @@ describe("NotesController", () => {
         }).compile();
 
         controller = module.get<NotesController>(NotesController);
-    });
-
-    it("should be defined", () => {
-        expect(controller).toBeDefined();
     });
 
     describe("getMyNote", () => {

@@ -2,9 +2,10 @@ import { ValidationPipe, ConsoleLogger, VersioningType } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import session from "express-session";
+import { NestExpressApplication } from "@nestjs/platform-express";
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule, {
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
         logger: new ConsoleLogger({
             json: process.env["JSON_LOGS"] === "true",
             logLevels: [process.env["LOG_LEVEL"] === "debug" ? "debug" : "log"]
@@ -33,10 +34,14 @@ async function bootstrap() {
             cookie: {
                 httpOnly: true,
                 secure: process.env["NODE_ENV"] === "production",
-                maxAge: 1000 * 60 * 60 * 24, // 1 day expire
+                maxAge: 1000 * 60 * 60 * 24, // 1 day expire,
+                sameSite: process.env["NODE_ENV"] === "production" ? "none" : undefined // "none" needed for render.com deploy (for now)
             },
         })
     );
+    if(process.env["NODE_ENV"] === "production") {
+        app.set("trust proxy", 1);
+    }
 
     await app.listen(process.env["PORT"] ?? 3000);
 }

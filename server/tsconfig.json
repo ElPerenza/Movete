@@ -19,6 +19,7 @@
       "ESNext.Iterator",
       "ESNext.Promise"
     ],
+    "types": ["jest"],
     "sourceMap": true,
     "outDir": "./dist",
     "incremental": true,
