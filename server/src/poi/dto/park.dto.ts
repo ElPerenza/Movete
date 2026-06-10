@@ -1,4 +1,4 @@
-import { IsMongoId, IsNotEmpty, IsNotEmptyObject, ValidateNested } from "class-validator";
+import { IsEnum,  IsMongoId, IsNotEmpty, IsNotEmptyObject, ValidateNested } from "class-validator";
 import { Point } from "../../common/point";
 import { OmitType, PartialType } from "@nestjs/mapped-types";
 import { Expose, Type } from "class-transformer";
@@ -28,7 +28,7 @@ export class ParkDto {
     location: Point;
 
     @Expose()
-    @ValidateNested()
+    @IsEnum(ParkType)
     parkType: ParkType;
 
     @Expose()
