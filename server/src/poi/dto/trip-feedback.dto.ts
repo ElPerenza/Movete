@@ -1,0 +1,31 @@
+import { PartialType } from "@nestjs/mapped-types";
+import { Expose } from "class-transformer";
+import { IsNotEmpty, Max, Min } from "class-validator";
+
+export class TripFeedbackDto {
+
+    @Expose()
+    @IsNotEmpty()
+    tripId: string;
+
+    @Expose()
+    @IsNotEmpty()
+    headsign: string;
+
+    @Expose()
+    @IsNotEmpty()
+    userId: string;
+
+    @Expose()
+    @Min(1)
+    @Max(10)
+    feedback: number;
+
+    @Expose()
+    feedbackDate: Date;
+
+    @Expose()
+    @Min(1)
+    @Max(7)
+    day: number;
+}

@@ -1,5 +1,5 @@
 import { Model } from "mongoose";
-import { Logger, Injectable, OnApplicationBootstrap } from "@nestjs/common";
+import { Logger, Injectable, OnApplicationBootstrap, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Stop, StopDocument } from "../models/stop.schema"
 import { CreateStopDto, UpdateStopDto } from "../dto/stop.dto";
@@ -7,12 +7,15 @@ import { SearchStopRequestDto } from "../dto/search-stop-request.dto";
 import { ConfigService } from "@nestjs/config";
 import { OtpService } from "../../otp/services/otp.service";
 import { Point } from "../../common/point";
+import { TripFeedbackDto } from "../dto/trip-feedback.dto";
+import { TripFeedback, TripFeedbackDocument } from "../models/tripFeedback.shema";
 
 @Injectable()
 export class StopService implements OnApplicationBootstrap {
     private readonly logger = new Logger(StopService.name, { timestamp: true });
     constructor(
         @InjectModel(Stop.name) private stopModel: Model<Stop>,
+        @InjectModel(TripFeedback.name) private TripFeedbackModel: Model<TripFeedbackDto>,
         private readonly configService: ConfigService,
         private readonly otpService: OtpService
     ) {}
@@ -141,5 +144,39 @@ export class StopService implements OnApplicationBootstrap {
         }
 
         this.logger.log(`Stop initialization complete: added ${stopsAdded} of ${otpStops.length} stops present in OpenTripPlanner`);
+    }
+
+    async createTripFeedback(feedback: TripFeedbackDto): Promise<TripFeedbackDto> {
+        this.logger.debug(`Creating Trip feedback with the given params: ${feedback}`)
+        return new this.TripFeedbackModel(feedback).save();
+    }
+    
+    async updateTripFeedback(feedback: TripFeedbackDto): Promise<TripFeedbackDocument | null> {
+        const updatedDocument = await this.TripFeedbackModel.findOneAndUpdate(
+            { tripId: feedback.tripId, userId: feedback.userId },
+            { $set: feedback },
+            { new: true, runValidators: true } // 'new: true' returns the modified document instead of the old one
+        ).exec();
+
+        if (!updatedDocument) {
+            throw new NotFoundException(`Impossibile trovare il feedback da aggiornare.`);
+        }
+        this.logger.log(updatedDocument);
+        return updatedDocument;
+    }
+
+    async getTripFeedback(tripId: string, userId: string, day: number): Promise<TripFeedbackDocument | null> {
+        const query = this.TripFeedbackModel.findOne({ tripId: tripId, userId: userId, day: day}).exec();
+        return query;
+    }
+
+    async getAvgTripFeedback(tripId: string, day: number): Promise<number> {
+        const result = await this.TripFeedbackModel.aggregate([
+            { $match: { tripId: tripId, day: day } },
+            { $group: { _id: "$tripId", avgFeedback: { $avg: "$feedback" } } },
+            { $project: { avgFeedback: { $round: ["$avgFeedback", 2] }}
+        }
+        ]).exec();
+        return result.length > 0 ? result[0].avgFeedback : 0;
     }
 }

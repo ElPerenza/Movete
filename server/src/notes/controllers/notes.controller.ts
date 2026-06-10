@@ -32,4 +32,30 @@ export class NotesController {
         await this.notesService.deleteNote(noteId, userId);
         return { message: 'Nota eliminata' };
     }
+
+    @Get('park/:parkId')
+    async getMyParkNote(@Param('parkId') parkId: string, @Req() req: Request) {
+        const userId = (req.session as any).userId;
+        if (!userId) throw new UnauthorizedException('Non autorizzato');
+
+        const note = await this.notesService.getNoteForPark(userId, parkId);
+        return note || { content: '' }; // Se non c'è, ritorna un contenuto vuoto per comodità del Frontend
+    }
+
+    @Post('park/:parkId')
+    async saveParkNote(@Param('parkId') parkId: string, @Body() body: NoteDto, @Req() req: Request) {
+        const userId = (req.session as any).userId;
+        if (!userId) throw new UnauthorizedException('Non autorizzato');
+
+        return this.notesService.saveOrUpdateParkNote(userId, parkId, body.content);
+    }
+
+    @Delete('park/:noteId')
+    async deleteParkNote(@Param('noteId') noteId: string, @Req() req: Request) {
+        const userId = (req.session as any).userId;
+        if (!userId) throw new UnauthorizedException('Non autorizzato');
+
+        await this.notesService.deleteParkNote(noteId, userId);
+        return { message: 'Nota eliminata' };
+    }
 }

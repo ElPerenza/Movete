@@ -8,13 +8,17 @@ import { ConfigModule } from "@nestjs/config";
 import { Park, ParkSchema } from "./models/park.schema";
 import { ParkController } from "./controllers/park.controller";
 import { ParkingService } from "./services/park.service";
+import { TripFeedback, tripFeedbackSchema } from "./models/tripFeedback.shema";
+import { ParkFeedback, parkFeedbackSchema } from "./models/parkFeedback.schema";
 
 @Module({
     imports: [
         ConfigModule.forRoot(),
         MongooseModule.forFeature([
             { name: Stop.name, schema: StopSchema },
-            { name: Park.name, schema: ParkSchema }
+            { name: Park.name, schema: ParkSchema },
+            { name: TripFeedback.name, schema: tripFeedbackSchema },
+            { name: ParkFeedback.name, schema: parkFeedbackSchema }
         ]),
         OtpModule
     ],

@@ -21,7 +21,9 @@ export class User {
     @Prop({ type: [{ type: Types.ObjectId, ref: "Stop" }], default: [] })
     favouriteStops: Types.ObjectId[];
 
-
+    @Prop({ type: [{ type: Types.ObjectId, ref: "Park" }], default: [] })
+    favouriteParks: Types.ObjectId[];
+    
     //Predisposition for favourite routes
     //@Prop({ type: [String], default: [] })
     //favouriteRoutes: string[];

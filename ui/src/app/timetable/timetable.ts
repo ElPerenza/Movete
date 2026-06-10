@@ -10,6 +10,8 @@ import { UserService } from "../user/services/user.service";
 import { NoteService } from "../user/services/note.service";
 import { AlertService, Alert } from "../alert/services/alert.service";
 import { environment } from "../../environments/environment";
+import { Park } from "../class/park";
+import { HourlyFeedback } from "../class/hourly-feedback";
 
 /**
  * Component for displaying transport timetables for a specific stop.
@@ -22,7 +24,8 @@ import { environment } from "../../environments/environment";
     templateUrl: './timetable.html'
 })
 export class Timetable implements OnChanges, OnInit, OnDestroy {
-    @Input({ required: true }) stop!: Stop;
+    @Input() stop?: Stop;
+    @Input() park?: Park;
 
     public currentStopTimes: StoptimeWithTripInfo[] = [];
     public isLoadingTimes: boolean = false;
@@ -52,6 +55,17 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     //Endipoint backend
     private baseUrl: string = new URL("pois/stop/", environment.apiUrl).href;
 
+    public selectedScore: number = 0;
+    public isSubmittingFeedback: boolean = false;
+    public feedbackSuccess: boolean = false;
+    public existingFeedbackScore: number | null = null;
+    public isLoadingFeedback: boolean = false;
+    public isEditingFeedback: boolean = false;
+    public isFeedbackSectionOpen: boolean = false;
+    public averageAffollamento: number = 0;
+    public selectedTripArrivalDate: string | null = null;
+    public hourlyDistribution: HourlyFeedback[] = [];
+
     constructor(
         private http: HttpClient,
         private cdr: ChangeDetectorRef,
@@ -64,19 +78,38 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     ngOnInit() {
         this.authSub = this.authService.isLoggedIn$.subscribe(status => {
             this.isLoggedIn = status;
-            if (this.isLoggedIn && this.stop) {
-                this.loadUserDataForStop();
+            if (this.isLoggedIn && (this.stop || this.park)) {
+                this.loadUserDataForPoi();
             }
         });
+        this.loadParkFeedbackData();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes["stop"] && this.stop) {
             this.isAlertsPanelOpen = false;
+
+            this.park = undefined; 
+
             this.fetchStopTimes(this.stop.id);
             this.loadAlerts();
+
             if (this.isLoggedIn) {
-                this.loadUserDataForStop();
+                this.loadUserDataForPoi();
+            }
+        }
+
+        if (changes["park"] && this.park) {
+            this.isAlertsPanelOpen = false;
+            
+            this.stop = undefined; 
+
+            this.currentStopTimes = [];
+            this.activeAlerts = [];
+            this.loadParkFeedbackData();
+
+            if (this.isLoggedIn) {
+                this.loadUserDataForPoi();
             }
         }
     }
@@ -85,53 +118,115 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         if (this.authSub) this.authSub.unsubscribe();
     }
 
+    private getPoiId(): string | undefined {
+        if (this.park) return this.park.id || (this.park as any)._id;
+        if (this.stop) return this.stop.id || (this.stop as any)._id;
+        return undefined;
+    }
+
     //---Notes and Favourites---
-    private loadUserDataForStop() {
+    private loadUserDataForPoi() {
+        const poiId = this.getPoiId();
+        if (!poiId) return;
+
         this.isLoadingNote = true;
 
-        this.userService.getFavourites().subscribe({
-            next: (favourites) => {
-                this.isFavourite = favourites.some(fav => fav.id === this.stop.id || (fav as any)._id === this.stop.id);
-                this.cdr.detectChanges();
-            },
-            error: (err) => console.error("Errore caricamento preferiti", err)
-        });
+        if (this.park) {
+            this.isFavourite = false;
+            this.noteContent = '';
+            this.savedNoteId = undefined;
 
-        // loads the note
-        this.noteService.getNoteForStop(this.stop.id).subscribe({
-            next: (note) => {
-                this.noteContent = note?.content || '';
-                this.savedNoteId = note?._id;
-                this.isLoadingNote = false;
-                this.cdr.detectChanges();
-            },
-            error: () => { this.isLoadingNote = false; }
-        });
+            this.userService.getFavouriteParks().subscribe({
+                next: (favouriteParks) => {
+                    this.isFavourite = favouriteParks.some(fav => fav.id === poiId || (fav as any)._id === poiId);
+                    this.cdr.detectChanges();
+                },
+                error: (err) => console.error("Errore caricamento parcheggi preferiti", err)
+            });
+
+            this.noteService.getNoteForPark(poiId).subscribe({
+                next: (note) => {
+                    this.noteContent = note?.content || '';
+                    this.savedNoteId = note?._id;
+                    this.isLoadingNote = false;
+                    this.cdr.detectChanges();
+                },
+                error: () => { this.isLoadingNote = false; }
+            });
+
+        } else if (this.stop) {
+            this.isFavourite = false;
+            this.noteContent = '';
+            this.savedNoteId = undefined;
+
+            this.userService.getFavourites().subscribe({
+                next: (favourites) => {
+                    this.isFavourite = favourites.some(fav => fav.id === poiId || (fav as any)._id === poiId);
+                    this.cdr.detectChanges();
+                },
+                error: (err) => console.error("Errore caricamento fermate preferite", err)
+            });
+
+            this.noteService.getNoteForStop(poiId).subscribe({
+                next: (note) => {
+                    this.noteContent = note?.content || '';
+                    this.savedNoteId = note?._id;
+                    this.isLoadingNote = false;
+                    this.cdr.detectChanges();
+                },
+                error: () => { this.isLoadingNote = false; }
+            });
+        }
     }
+
     public toggleFavourite(event: Event) {
         event.stopPropagation();
+        const poiId = this.getPoiId();
+        if (!poiId) return;
 
         this.isFavourite = !this.isFavourite;
         this.cdr.detectChanges();
 
-        if (this.isFavourite) {
-            this.userService.addFavourite(this.stop.id).subscribe({
-                next: () => console.log('Preferito aggiunto!'),
-                error: (err) => {
-                    console.error('Errore aggiunta preferito', err);
-                    this.isFavourite = false; // Rollback in caso di errore del server
-                    this.cdr.detectChanges();
-                }
-            });
-        } else {
-            this.userService.removeFavourite(this.stop.id).subscribe({
-                next: () => console.log('Preferito rimosso!'),
-                error: (err) => {
-                    console.error('Errore rimozione preferito', err);
-                    this.isFavourite = true; // Rollback in caso di errore del server
-                    this.cdr.detectChanges();
-                }
-            });
+        if (this.park) {
+            if (this.isFavourite) {
+                this.userService.addFavouritePark(poiId).subscribe({
+                    next: () => console.log('Parcheggio preferito aggiunto!'),
+                    error: (err) => {
+                        console.error('Errore aggiunta parcheggio preferito', err);
+                        this.isFavourite = false;
+                        this.cdr.detectChanges();
+                    }
+                });
+            } else {
+                this.userService.removeFavouritePark(poiId).subscribe({
+                    next: () => console.log('Parcheggio preferito rimosso!'),
+                    error: (err) => {
+                        console.error('Errore rimozione parcheggio preferito', err);
+                        this.isFavourite = true;
+                        this.cdr.detectChanges();
+                    }
+                });
+            }
+        } else if (this.stop) {
+            if (this.isFavourite) {
+                this.userService.addFavourite(poiId).subscribe({
+                    next: () => console.log('Fermata preferita aggiunta!'),
+                    error: (err) => {
+                        console.error('Errore aggiunta fermata preferita', err);
+                        this.isFavourite = false;
+                        this.cdr.detectChanges();
+                    }
+                });
+            } else {
+                this.userService.removeFavourite(poiId).subscribe({
+                    next: () => console.log('Fermata preferita rimossa!'),
+                    error: (err) => {
+                        console.error('Errore rimozione fermata preferita', err);
+                        this.isFavourite = true;
+                        this.cdr.detectChanges();
+                    }
+                });
+            }
         }
     }
 
@@ -142,7 +237,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
 
     public openNoteModal(event: Event) {
         event.stopPropagation();
-        this.tempNoteContent = this.noteContent; // Copia il testo attuale per modificarlo
+        this.tempNoteContent = this.noteContent;
         this.isNoteModalOpen = true;
     }
 
@@ -151,19 +246,17 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         this.isNoteModalOpen = false;
     }
 
-    public saveNote(event: Event) {
+    public saveStopNote(event: Event): void {
         event.stopPropagation();
+        if (!this.stop) return;
+        const stopId = this.stop.id || (this.stop as any)._id;
+        if (!stopId) return;
 
-        // If user empties the note --> delete note
         if (!this.tempNoteContent.trim()) {
             if (this.savedNoteId) {
                 this.isLoadingNote = true;
                 this.noteService.deleteNote(this.savedNoteId).subscribe(() => {
-                    this.noteContent = '';
-                    this.savedNoteId = undefined;
-                    this.isLoadingNote = false;
-                    this.isNoteModalOpen = false;
-                    this.cdr.detectChanges();
+                    this.resetNoteState();
                 });
             } else {
                 this.isNoteModalOpen = false;
@@ -171,17 +264,51 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
             return;
         }
 
-        // otherwise save
         this.isLoadingNote = true;
-        this.noteService.saveNote(this.stop.id, this.tempNoteContent).subscribe((res) => {
-            this.savedNoteId = res._id;
-            this.noteContent = this.tempNoteContent;
-            this.isLoadingNote = false;
-            this.isNoteModalOpen = false;
-            this.cdr.detectChanges();
+        this.noteService.saveNote(stopId, this.tempNoteContent).subscribe((res) => {
+            this.updateNoteState(res._id);
         });
     }
 
+    public saveParkNote(event: Event): void {
+        event.stopPropagation();
+        if (!this.park) return;
+        const parkId = this.park.id || (this.park as any)._id;
+        if (!parkId) return;
+
+        if (!this.tempNoteContent.trim()) {
+            if (this.savedNoteId) {
+                this.isLoadingNote = true;
+                this.noteService.deleteParkNote(this.savedNoteId).subscribe(() => {
+                    this.resetNoteState();
+                });
+            } else {
+                this.isNoteModalOpen = false;
+            }
+            return;
+        }
+
+        this.isLoadingNote = true;
+        this.noteService.saveParkNote(parkId, this.tempNoteContent).subscribe((res) => {
+            this.updateNoteState(res._id);
+        });
+    }
+
+    private resetNoteState(): void {
+        this.noteContent = '';
+        this.savedNoteId = undefined;
+        this.isLoadingNote = false;
+        this.isNoteModalOpen = false;
+        this.cdr.detectChanges();
+    }
+
+    private updateNoteState(noteId: string): void {
+        this.savedNoteId = noteId;
+        this.noteContent = this.tempNoteContent;
+        this.isLoadingNote = false;
+        this.isNoteModalOpen = false;
+        this.cdr.detectChanges();
+    }
     private fetchStopTimes(stopId: string): void {
         this.isLoadingTimes = true;
         this.timesError = null;
@@ -203,6 +330,7 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     }
 
     loadAlerts(): void {
+        if (!this.stop) return;
         this.isLoadingAlerts = true;
         this.activeAlerts = [];
 
@@ -225,7 +353,20 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
         this.selectedTrip = time.tripInfo;
         this.isLoadingTrip = true;
         this.tripDetails = [];
-        this.cdr.detectChanges();
+
+        this.selectedScore = 0;
+        this.feedbackSuccess = false;
+        this.existingFeedbackScore = null;
+        this.averageAffollamento = 0;
+        this.selectedTripArrivalDate = time.stoptime?.scheduledArrival || null;
+        if (time.tripInfo?.id) {
+            this.userService.getAvgTripFeedback(time.tripInfo.id, new Date().getDay() === 0 ? 7 : new Date().getDay())
+                .subscribe((avg: number) => {
+                    this.averageAffollamento = avg || 0;
+                    this.cdr.detectChanges();
+                })
+        }
+
 
         const encodedTripId = encodeURIComponent(time.tripInfo.id);
         const serviceDateTimestamp = Date.parse(time.tripInfo.serviceDate);
@@ -242,6 +383,27 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
                 this.cdr.detectChanges();
             }
         });
+
+        if (this.isLoggedIn) {
+            const feedbackDateString = this.selectedTripArrivalDate || new Date().toISOString();
+            const dateObj = new Date(feedbackDateString);
+            const currentDay = dateObj.getDay() === 0 ? 7 : dateObj.getDay();
+            this.isLoadingFeedback = true;
+            this.userService.getTripFeedback(time.tripInfo.id, currentDay).subscribe({
+                next: (fb) => {
+                    this.isLoadingFeedback = false;
+                    if (fb && fb.feedback) {
+                        this.existingFeedbackScore = fb.feedback;
+                        this.selectedScore = fb.feedback;
+                    }
+                    this.cdr.detectChanges();
+                },
+                error: () => {
+                    this.isLoadingFeedback = false;
+                    this.cdr.detectChanges();
+                }
+            });
+        }
     }
 
     protected isUpcomingStop(stop: Stoptime, allStops: Stoptime[]): boolean {
@@ -260,5 +422,163 @@ export class Timetable implements OnChanges, OnInit, OnDestroy {
     public closeModal(): void {
         this.isModalOpen = false;
         this.tripDetails = [];
+        this.selectedScore = 0;
+        this.feedbackSuccess = false;
+        this.isSubmittingFeedback = false;
+        this.existingFeedbackScore = null;
+        this.isLoadingFeedback = false;
+        this.isEditingFeedback = false;
+        this.averageAffollamento = 0;
+        this.selectedTripArrivalDate = null;
+    }
+
+    public setScore(score: number, event: Event): void {
+        event.stopPropagation();
+        if (!this.isEditingFeedback && this.existingFeedbackScore !== null) return;
+        if (this.isSubmittingFeedback || this.feedbackSuccess) return;
+
+        if (this.isEditingFeedback) {
+            this.feedbackSuccess = false; 
+        }
+
+        this.selectedScore = score;
+        this.cdr.detectChanges();
+    }
+
+    public enableEditing(event: Event): void {
+        event.stopPropagation();
+        this.isEditingFeedback = true;
+        this.feedbackSuccess = false;
+        this.cdr.detectChanges();
+    }
+
+    toggleFeedbackSection(event: Event): void {
+        event.stopPropagation();
+        this.isFeedbackSectionOpen = !this.isFeedbackSectionOpen;
+        this.cdr.detectChanges();
+    }
+
+    public submitFeedback(): void {
+        if (!this.selectedTrip || this.selectedScore < 1 || this.selectedScore > 10) return;
+
+        this.isSubmittingFeedback = true;
+        this.cdr.detectChanges();
+
+        const feedbackDateString = this.selectedTripArrivalDate || new Date().toISOString();
+        const dateObj = new Date(feedbackDateString);
+        const currentDay = dateObj.getDay() === 0 ? 7 : dateObj.getDay(); // Convert Sunday from 0 to 7 for ISO standard
+
+        const request$ = this.existingFeedbackScore !== null
+        ? this.userService.updateTripFeedback(this.selectedTrip.id, this.selectedTrip.headsign, this.selectedScore, currentDay)
+        : this.userService.sendTripFeedback(this.selectedTrip.id, this.selectedTrip.headsign, this.selectedScore, currentDay);
+
+        request$.subscribe({
+            next: () => {
+                this.isSubmittingFeedback = false;
+                this.feedbackSuccess = true;
+                this.existingFeedbackScore = this.selectedScore; // Update historical value reference
+                this.isEditingFeedback = false;
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error("Failed to submit/update trip feedback", err);
+                this.isSubmittingFeedback = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    loadParkFeedbackData(): void {
+        if (!this.park) return;
+        const parkId = this.getPoiId();
+        
+        if (!parkId) return;
+
+        const now = new Date();
+        const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+        
+        let currentHour = now.getHours();
+        if (currentHour < 6) currentHour = 6;
+        if (currentHour > 23) currentHour = 23;
+
+        this.userService.getAvgParkFeedback(parkId, currentDay).subscribe({
+            next: (data: HourlyFeedback[]) => {
+                console.log('Dati ricevuti dal backend:', data);
+                this.hourlyDistribution = data;
+            },
+            error: (err) => {
+                console.error("Errore nel recupero della distribuzione oraria:", err);
+                this.hourlyDistribution = [];
+            }
+        });
+
+        if (this.isLoggedIn) {
+            this.userService.getParkFeedback(parkId, currentDay).subscribe({
+                next: (userFeedbacks: any[]) => {
+                    if (userFeedbacks && userFeedbacks.length > 0) {
+                        // Cerchiamo nell'array se l'utente ha votato SPECIFICATAMENTE per l'ora attuale
+                        const feedbackForCurrentHour = userFeedbacks.find(f => f.hour === currentHour);
+
+                        if (feedbackForCurrentHour) {
+                            // L'utente ha già votato in quest'ora
+                            this.existingFeedbackScore = feedbackForCurrentHour.feedback;
+                            this.selectedScore = feedbackForCurrentHour.feedback;
+                        } else {
+                            // Ha votato oggi, ma in altre ore. Per quest'ora il voto è pulito
+                            this.existingFeedbackScore = null;
+                            this.selectedScore = 0;
+                        }
+                    } else {
+                        // Nessun voto oggi
+                        this.existingFeedbackScore = null;
+                        this.selectedScore = 0;
+                    }
+                },
+                error: () => {
+                    this.existingFeedbackScore = null;
+                    this.selectedScore = 0;
+                }
+            });
+        }
+    }
+
+    public submitParkFeedback(): void {
+        const parkId = this.getPoiId();
+        if (!this.park || !parkId || this.selectedScore < 1 || this.selectedScore > 10) return;
+
+        this.isSubmittingFeedback = true;
+        this.cdr.detectChanges();
+
+
+        const request$ = this.existingFeedbackScore !== null
+            ? this.userService.updateParkFeedback(parkId, this.selectedScore)
+            : this.userService.sendParkFeedback(parkId, this.selectedScore);
+
+        request$.subscribe({
+            next: () => {
+                this.isSubmittingFeedback = false;
+                this.feedbackSuccess = true;
+                this.existingFeedbackScore = this.selectedScore;
+                this.isEditingFeedback = false;
+
+                this.loadParkFeedbackData();
+
+                this.cdr.detectChanges();
+            },
+            error: (err) => {
+                console.error("Errore durante l'invio del feedback del parcheggio", err);
+                this.isSubmittingFeedback = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    getCurrentHour(): number {
+        const hour = new Date().getHours();
+        
+        if (hour < 6) return 6;
+        if (hour > 23) return 23;
+        
+        return hour;
     }
 }
